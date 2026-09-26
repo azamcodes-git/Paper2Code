@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paper2Code — IBM Bob Hackathon</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    #wrongOriginBanner {
+      display: none;
+      background: #fef3c7;
+      border: 1px solid #d97706;
+      color: #92400e;
+      padding: .6rem 1rem;
+      border-radius: 4px;
+      margin-bottom: 1.25rem;
+      font-size: .85rem;
+    }
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      background: #f7f8fa;
+      color: #1f2328;
+      padding: 2rem 1rem;
+    }
+    .container { max-width: 860px; margin: 0 auto; }
+    h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: .25rem; }
+    p.sub  { color: #57606a; margin-bottom: 1.5rem; font-size: .9rem; }
+    label  { display: block; font-weight: 500; margin-bottom: .4rem; }
+    input[type="file"] {
+      display: block;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      padding: .4rem .6rem;
+      background: #fff;
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: .75rem;
+    }
+    button {
+      background: #3b82d4;
+      color: #fff;
+      border: none;
+      padding: .45rem 1.1rem;
+      border-radius: 4px;
+      font-size: .9rem;
+      cursor: pointer;
+    }
+    button:disabled { background: #9bb8e8; cursor: not-allowed; }
+    section { margin-top: 1.75rem; }
+    h2 { font-size: 1rem; font-weight: 600; margin-bottom: .5rem; border-bottom: 1px solid #e5e7eb; padding-bottom: .3rem; }
+    textarea, pre {
+      display: block;
+      width: 100%;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      padding: .6rem .8rem;
+      font-family: "Cascadia Code", "Fira Mono", Consolas, monospace;
+      font-size: .8rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-x: auto;
+    }
+    textarea { resize: vertical; min-height: 140px; }
+    pre      { min-height: 60px; max-height: 480px; overflow-y: auto; }
+    .status  { font-size: .85rem; margin-top: .5rem; }
+    .ok   { color: #2a7f4f; }
+    .err  { color: #b91c1c; }
+    .tabs { display: flex; gap: .5rem; margin-bottom: .5rem; }
+    .tab  {
+      padding: .25rem .75rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      cursor: pointer;
+      background: #fff;
+      font-size: .82rem;
+    }
+    .tab.active { background: #3b82d4; color: #fff; border-color: #3b82d4; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div id="wrongOriginBanner">
+    ⚠️ You are viewing this page directly from the filesystem or a different server.<br>
+    Open it through the FastAPI backend instead:
+    <strong><a id="correctLink" href="http://localhost:8000">http://localhost:8000</a></strong>
+    — otherwise API calls will fail.
+  </div>
+
+  <h1>Paper2Code</h1>
+  <p class="sub">Upload a Computer Vision research paper (PDF) → run IBM Bob verification → view generated PyTorch source.</p>
+
+  <!-- ── Upload form ─────────────────────────────────────────────────── -->
+  <section>
+    <h2>1. Upload Paper</h2>
+    <form id="uploadForm">
+      <label for="pdfInput">Select PDF:</label>
+      <input type="file" id="pdfInput" name="file" accept=".pdf" required />
+      <button type="submit" id="submitBtn">Upload &amp; Process</button>
+    </form>
+    <p id="statusMsg" class="status"></p>
+  </section>
+
+  <!-- ── Terminal log ────────────────────────────────────────────────── -->
+  <section>
+    <h2>2. Verification Log</h2>
+    <textarea id="logBox" readonly placeholder="Verification output will appear here…"></textarea>
+  </section>
+
+  <!-- ── Generated source ───────────────────────────────────────────── -->
+  <section>
+    <h2>3. Generated Source Code</h2>
+    <div class="tabs">
+      <button class="tab active" data-file="model.py">model.py</button>
+      <button class="tab"        data-file="dataset.py">dataset.py</button>
+      <button class="tab"        data-file="verify_tensors.py">verify_tensors.py</button>
+    </div>
+    <pre id="codeBox">Source will load after a successful upload…</pre>
+  </section>
+
+</div>
+
+<script>
+  // ── origin guard ─────────────────────────────────────────────────────────
+  // Always call the FastAPI server directly so fetch() hits the right host.
+  const API_PORT = 8000;
+  const API_ORIGIN = window.location.port === String(API_PORT)
+    ? ''   // already on FastAPI — use relative paths
+    : 'http://localhost:' + API_PORT;
+
+  if (API_ORIGIN) {
+    const banner = document.getElementById('wrongOriginBanner');
+    const link   = document.getElementById('correctLink');
+    banner.style.display = 'block';
+    link.href = API_ORIGIN;
+    link.textContent = API_ORIGIN;
+  }
+
+  const form      = document.getElementById('uploadForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const statusMsg = document.getElementById('statusMsg');
+  const logBox    = document.getElementById('logBox');
+  const codeBox   = document.getElementById('codeBox');
+  const tabs      = document.querySelectorAll('.tab');
+
+  let activeFile = 'model.py';
+
+  // ── tab switching ────────────────────────────────────────────────────
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeFile = tab.dataset.file;
+      fetchCode(activeFile);
+    });
+  });
+
+  // ── upload ──────────────────────────────────────────────────────────
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fileInput = document.getElementById('pdfInput');
+    if (!fileInput.files.length) return;
+
+    submitBtn.disabled = true;
+    statusMsg.textContent = 'Uploading and running verification…';
+    statusMsg.className = 'status';
+    logBox.value = '';
+    codeBox.textContent = '';
+
+    const fd = new FormData();
+    fd.append('file', fileInput.files[0]);
+
+    try {
+      const res  = await fetch(API_ORIGIN + '/api/upload-paper', { method: 'POST', body: fd });
+      const data = await res.json();
+
+      if (res.ok) {
+        const v = data.verification;
+        logBox.value = [
+          '=== stdout ===',
+          v.stdout || '(none)',
+          '',
+          '=== stderr ===',
+          v.stderr || '(none)',
+          '',
+          `Return code: ${v.returncode}`,
+          `Status: ${data.status}`,
+        ].join('\n');
+
+        statusMsg.textContent = data.message;
+        statusMsg.className   = 'status ' + (data.status === 'ok' ? 'ok' : 'err');
+
+        if (data.status === 'ok') {
+          fetchCode(activeFile);
+        }
+      } else {
+        statusMsg.textContent = data.detail || 'Upload failed.';
+        statusMsg.className   = 'status err';
+      }
+    } catch (err) {
+      statusMsg.textContent = 'Network error: ' + err.message;
+      statusMsg.className   = 'status err';
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  // ── fetch source code ────────────────────────────────────────────────
+  async function fetchCode(filename) {
+    codeBox.textContent = 'Loading ' + filename + '…';
+    try {
+      const res  = await fetch(API_ORIGIN + '/api/get-code/' + filename);
+      const data = await res.json();
+      if (res.ok) {
+        codeBox.textContent = data.content;
+      } else {
+        codeBox.textContent = 'Error: ' + (data.detail || 'unknown');
+      }
+    } catch (err) {
+      codeBox.textContent = 'Network error: ' + err.message;
+    }
+  }
+
+  // Load model.py on first visit
+  fetchCode('model.py');
+</script>
+</body>
+</html>
