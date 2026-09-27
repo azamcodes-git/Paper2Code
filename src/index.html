@@ -1,232 +1,500 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Paper2Code — IBM Bob Hackathon</title>
+  <title>Paper2Code — IBM Bob 2.0</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'slate-950': '#020617',
+          },
+          fontFamily: {
+            mono: ['"JetBrains Mono"', '"Fira Code"', 'Consolas', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    #wrongOriginBanner {
-      display: none;
-      background: #fef3c7;
-      border: 1px solid #d97706;
-      color: #92400e;
-      padding: .6rem 1rem;
-      border-radius: 4px;
-      margin-bottom: 1.25rem;
-      font-size: .85rem;
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    /* ── scrollbars ─────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+
+    /* ── drag-over highlight ────────────────────── */
+    #dropZone.drag-over {
+      border-color: #3b82f6;
+      background-color: rgba(59,130,246,0.08);
     }
-    body {
-      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
-      font-size: 14px;
-      line-height: 1.6;
-      background: #f7f8fa;
-      color: #1f2328;
-      padding: 2rem 1rem;
+
+    /* ── terminal cursor blink ──────────────────── */
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .cursor { display:inline-block; width:8px; height:14px;
+              background:#22c55e; animation:blink 1s step-end infinite;
+              vertical-align:middle; margin-left:2px; }
+
+    /* ── status pulse ───────────────────────────── */
+    @keyframes pulse-green { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.6)} 50%{box-shadow:0 0 0 5px rgba(34,197,94,0)} }
+    .pulse-green { animation: pulse-green 2s infinite; }
+
+    /* ── tab active indicator ───────────────────── */
+    .tab-btn.active {
+      color: #3b82f6;
+      border-bottom: 2px solid #3b82f6;
     }
-    .container { max-width: 860px; margin: 0 auto; }
-    h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: .25rem; }
-    p.sub  { color: #57606a; margin-bottom: 1.5rem; font-size: .9rem; }
-    label  { display: block; font-weight: 500; margin-bottom: .4rem; }
-    input[type="file"] {
-      display: block;
-      border: 1px solid #e5e7eb;
-      border-radius: 4px;
-      padding: .4rem .6rem;
-      background: #fff;
-      width: 100%;
-      max-width: 480px;
-      margin-bottom: .75rem;
-    }
-    button {
-      background: #3b82d4;
-      color: #fff;
-      border: none;
-      padding: .45rem 1.1rem;
-      border-radius: 4px;
-      font-size: .9rem;
-      cursor: pointer;
-    }
-    button:disabled { background: #9bb8e8; cursor: not-allowed; }
-    section { margin-top: 1.75rem; }
-    h2 { font-size: 1rem; font-weight: 600; margin-bottom: .5rem; border-bottom: 1px solid #e5e7eb; padding-bottom: .3rem; }
-    textarea, pre {
-      display: block;
-      width: 100%;
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 4px;
-      padding: .6rem .8rem;
-      font-family: "Cascadia Code", "Fira Mono", Consolas, monospace;
-      font-size: .8rem;
-      line-height: 1.5;
-      white-space: pre-wrap;
-      word-break: break-word;
+
+    /* ── code block ─────────────────────────────── */
+    #codeDisplay {
+      font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+      font-size: 0.78rem;
+      line-height: 1.7;
+      white-space: pre;
       overflow-x: auto;
+      tab-size: 4;
     }
-    textarea { resize: vertical; min-height: 140px; }
-    pre      { min-height: 60px; max-height: 480px; overflow-y: auto; }
-    .status  { font-size: .85rem; margin-top: .5rem; }
-    .ok   { color: #2a7f4f; }
-    .err  { color: #b91c1c; }
-    .tabs { display: flex; gap: .5rem; margin-bottom: .5rem; }
-    .tab  {
-      padding: .25rem .75rem;
-      border: 1px solid #e5e7eb;
-      border-radius: 4px;
-      cursor: pointer;
-      background: #fff;
-      font-size: .82rem;
+
+    /* ── terminal text ──────────────────────────── */
+    #terminalOutput {
+      font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+      font-size: 0.76rem;
+      line-height: 1.7;
     }
-    .tab.active { background: #3b82d4; color: #fff; border-color: #3b82d4; }
   </style>
 </head>
-<body>
-<div class="container">
+<body class="h-full bg-slate-950 text-slate-200 flex flex-col overflow-hidden">
 
-  <div id="wrongOriginBanner">
-    ⚠️ You are viewing this page directly from the filesystem or a different server.<br>
-    Open it through the FastAPI backend instead:
-    <strong><a id="correctLink" href="http://localhost:8000">http://localhost:8000</a></strong>
-    — otherwise API calls will fail.
+  <!-- ═══════════════════════════════════════════════════════════════
+       TOP NAVIGATION BAR
+  ════════════════════════════════════════════════════════════════ -->
+  <header class="flex-shrink-0 flex items-center justify-between px-6 py-3 bg-slate-900 border-b border-slate-800">
+    <!-- Left: logo + badge -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-microchip text-blue-500 text-lg"></i>
+        <span class="text-white font-semibold text-base tracking-wide">Paper2Code</span>
+      </div>
+      <span class="text-xs font-mono bg-blue-600/20 text-blue-400 border border-blue-600/40 px-2 py-0.5 rounded-full">
+        IBM Bob 2.0
+      </span>
+    </div>
+
+    <!-- Center: pipeline stage indicators -->
+    <div class="hidden md:flex items-center gap-1 text-xs font-mono text-slate-500">
+      <span id="stage-upload"   class="px-2 py-0.5 rounded border border-slate-700">Upload</span>
+      <i class="fa-solid fa-chevron-right text-slate-700 text-[10px]"></i>
+      <span id="stage-verify"   class="px-2 py-0.5 rounded border border-slate-700">Verify</span>
+      <i class="fa-solid fa-chevron-right text-slate-700 text-[10px]"></i>
+      <span id="stage-generate" class="px-2 py-0.5 rounded border border-slate-700">Generate</span>
+    </div>
+
+    <!-- Right: status indicator -->
+    <div class="flex items-center gap-2 text-xs font-mono">
+      <span class="w-2 h-2 rounded-full bg-green-500 pulse-green inline-block"></span>
+      <span class="text-green-400">Sandbox Active</span>
+      <span class="text-slate-600 mx-2">|</span>
+      <span id="serverStatus" class="text-slate-500">
+        <i class="fa-solid fa-circle-notch fa-spin mr-1 text-[10px]"></i>connecting…
+      </span>
+    </div>
+  </header>
+
+  <!-- wrong-origin banner -->
+  <div id="wrongOriginBanner" class="hidden flex-shrink-0 items-center gap-3 px-6 py-2 bg-amber-950/60 border-b border-amber-700/40 text-amber-300 text-xs font-mono">
+    <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
+    <span>You are viewing this file outside FastAPI. Open at
+      <a id="correctLink" href="http://localhost:8000" class="underline text-amber-200 hover:text-white">http://localhost:8000</a>
+      — otherwise API calls will fail.
+    </span>
   </div>
 
-  <h1>Paper2Code</h1>
-  <p class="sub">Upload a Computer Vision research paper (PDF) → run IBM Bob verification → view generated PyTorch source.</p>
+  <!-- ═══════════════════════════════════════════════════════════════
+       SPLIT-PANE WORKSPACE
+  ════════════════════════════════════════════════════════════════ -->
+  <main class="flex flex-1 overflow-hidden">
 
-  <!-- ── Upload form ─────────────────────────────────────────────────── -->
-  <section>
-    <h2>1. Upload Paper</h2>
-    <form id="uploadForm">
-      <label for="pdfInput">Select PDF:</label>
-      <input type="file" id="pdfInput" name="file" accept=".pdf" required />
-      <button type="submit" id="submitBtn">Upload &amp; Process</button>
-    </form>
-    <p id="statusMsg" class="status"></p>
-  </section>
+    <!-- ── LEFT PANE ─────────────────────────────────────────────── -->
+    <aside class="w-1/3 min-w-[280px] flex flex-col border-r border-slate-800 bg-slate-900/50">
 
-  <!-- ── Terminal log ────────────────────────────────────────────────── -->
-  <section>
-    <h2>2. Verification Log</h2>
-    <textarea id="logBox" readonly placeholder="Verification output will appear here…"></textarea>
-  </section>
+      <!-- Section header -->
+      <div class="flex-shrink-0 px-4 py-3 border-b border-slate-800">
+        <p class="text-xs font-mono text-blue-400 uppercase tracking-widest">
+          <i class="fa-solid fa-upload mr-1"></i>Input Pipeline
+        </p>
+      </div>
 
-  <!-- ── Generated source ───────────────────────────────────────────── -->
-  <section>
-    <h2>3. Generated Source Code</h2>
-    <div class="tabs">
-      <button class="tab active" data-file="model.py">model.py</button>
-      <button class="tab"        data-file="dataset.py">dataset.py</button>
-      <button class="tab"        data-file="verify_tensors.py">verify_tensors.py</button>
-    </div>
-    <pre id="codeBox">Source will load after a successful upload…</pre>
-  </section>
+      <div class="flex flex-col flex-1 overflow-y-auto p-4 gap-4">
 
-</div>
+        <!-- Drag-and-drop zone -->
+        <div id="dropZone"
+             class="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-slate-700 bg-slate-900 p-6 cursor-pointer transition-colors duration-200 hover:border-blue-600/60 hover:bg-blue-950/20 select-none"
+             onclick="document.getElementById('pdfInput').click()">
+          <div class="w-12 h-12 rounded-full bg-blue-600/10 border border-blue-600/30 flex items-center justify-center">
+            <i class="fa-solid fa-file-pdf text-blue-500 text-xl"></i>
+          </div>
+          <div class="text-center">
+            <p class="text-slate-300 text-sm font-medium">Drop PDF here</p>
+            <p class="text-slate-500 text-xs mt-0.5">or click to browse</p>
+          </div>
+          <div id="fileLabel" class="hidden text-xs font-mono text-green-400 bg-green-950/30 border border-green-800/40 px-3 py-1 rounded-full max-w-full truncate">
+            <i class="fa-solid fa-check mr-1"></i><span id="fileLabelText"></span>
+          </div>
+        </div>
+        <input type="file" id="pdfInput" accept=".pdf" class="hidden" />
 
-<script>
-  // ── origin guard ─────────────────────────────────────────────────────────
-  // Always call the FastAPI server directly so fetch() hits the right host.
-  const API_PORT = 8000;
+        <!-- Execute button -->
+        <button id="executeBtn"
+                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-sm font-semibold tracking-wide transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+                onclick="runPipeline()" disabled>
+          <i id="executeBtnIcon" class="fa-solid fa-bolt"></i>
+          <span id="executeBtnLabel">Execute Agentic Pipeline</span>
+        </button>
+
+        <!-- Divider -->
+        <div class="flex items-center gap-2 text-slate-700">
+          <div class="flex-1 h-px bg-slate-800"></div>
+          <span class="text-xs font-mono uppercase tracking-widest text-slate-600">Terminal</span>
+          <div class="flex-1 h-px bg-slate-800"></div>
+        </div>
+
+        <!-- Agent terminal -->
+        <div class="flex flex-col flex-1 min-h-[220px] rounded-lg border border-slate-800 bg-slate-950 overflow-hidden">
+          <!-- Terminal title bar -->
+          <div class="flex-shrink-0 flex items-center gap-2 px-3 py-2 bg-slate-900 border-b border-slate-800">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-500/70"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-yellow-500/70"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-green-500/70"></span>
+            <span class="ml-2 text-xs font-mono text-slate-500">agent-terminal</span>
+            <button onclick="clearTerminal()" class="ml-auto text-slate-600 hover:text-slate-400 text-xs transition-colors" title="Clear terminal">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+          <!-- Terminal body -->
+          <div id="terminalOutput" class="flex-1 overflow-y-auto p-3 text-green-400">
+            <div class="text-slate-600">── Paper2Code Agent Terminal ───────────</div>
+            <div class="text-slate-600">── IBM Bob 2.0 Verification Sandbox ────</div>
+            <div class="mt-1 text-slate-500">$ awaiting input<span class="cursor"></span></div>
+          </div>
+        </div>
+
+      </div><!-- /scroll area -->
+    </aside>
+
+    <!-- ── RIGHT PANE ─────────────────────────────────────────────── -->
+    <section class="flex flex-col flex-1 min-w-0">
+
+      <!-- Tabs bar -->
+      <div class="flex-shrink-0 flex items-center gap-0 border-b border-slate-800 bg-slate-900/40 px-4">
+        <button data-file="model.py"
+                class="tab-btn active flex items-center gap-2 px-4 py-3 text-xs font-mono text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition-colors"
+                onclick="switchTab(this, 'model.py')">
+          <i class="fa-solid fa-cube text-purple-400"></i>model.py
+        </button>
+        <button data-file="dataset.py"
+                class="tab-btn flex items-center gap-2 px-4 py-3 text-xs font-mono text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition-colors"
+                onclick="switchTab(this, 'dataset.py')">
+          <i class="fa-solid fa-database text-cyan-400"></i>dataset.py
+        </button>
+        <button data-file="verify_tensors.py"
+                class="tab-btn flex items-center gap-2 px-4 py-3 text-xs font-mono text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition-colors"
+                onclick="switchTab(this, 'verify_tensors.py')">
+          <i class="fa-solid fa-flask text-green-400"></i>verify_tensors.py
+        </button>
+
+        <!-- Spacer + copy button -->
+        <div class="ml-auto flex items-center gap-2 py-2">
+          <span id="codeFilename" class="text-xs font-mono text-slate-600">model.py</span>
+          <button id="copyBtn"
+                  onclick="copyCode()"
+                  class="flex items-center gap-1.5 px-3 py-1 rounded text-xs font-mono text-slate-400 bg-slate-800 hover:bg-slate-700 hover:text-white border border-slate-700 transition-colors">
+            <i id="copyIcon" class="fa-regular fa-copy"></i>
+            <span id="copyLabel">Copy</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Code display -->
+      <div class="flex-1 overflow-auto bg-slate-950 relative">
+        <!-- Line gutter -->
+        <div class="flex h-full">
+          <div id="lineNumbers"
+               class="flex-shrink-0 select-none text-right text-slate-700 text-[0.72rem] font-mono leading-[1.7] px-3 py-4 bg-slate-900/30 border-r border-slate-800/50 min-w-[3rem]">
+            1
+          </div>
+          <pre id="codeDisplay" class="flex-1 p-4 text-slate-300 m-0 bg-transparent outline-none"></pre>
+        </div>
+
+        <!-- Empty state -->
+        <div id="emptyState" class="hidden absolute inset-0 flex flex-col items-center justify-center text-slate-700 gap-4 pointer-events-none">
+          <i class="fa-solid fa-code text-5xl"></i>
+          <p class="text-sm font-mono">Upload a paper to load generated source code</p>
+        </div>
+
+        <!-- Loading overlay -->
+        <div id="codeLoader" class="hidden absolute inset-0 flex items-center justify-center bg-slate-950/80">
+          <div class="flex flex-col items-center gap-3 text-blue-400">
+            <i class="fa-solid fa-circle-notch fa-spin text-2xl"></i>
+            <span class="text-xs font-mono">loading source…</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       JAVASCRIPT
+  ════════════════════════════════════════════════════════════════ -->
+  <script>
+  // ── Origin guard ──────────────────────────────────────────────────────────
+  const API_PORT   = 8000;
   const API_ORIGIN = window.location.port === String(API_PORT)
-    ? ''   // already on FastAPI — use relative paths
+    ? ''
     : 'http://localhost:' + API_PORT;
 
   if (API_ORIGIN) {
     const banner = document.getElementById('wrongOriginBanner');
     const link   = document.getElementById('correctLink');
-    banner.style.display = 'block';
+    banner.classList.remove('hidden');
+    banner.classList.add('flex');
     link.href = API_ORIGIN;
     link.textContent = API_ORIGIN;
   }
 
-  const form      = document.getElementById('uploadForm');
-  const submitBtn = document.getElementById('submitBtn');
-  const statusMsg = document.getElementById('statusMsg');
-  const logBox    = document.getElementById('logBox');
-  const codeBox   = document.getElementById('codeBox');
-  const tabs      = document.querySelectorAll('.tab');
+  // ── State ─────────────────────────────────────────────────────────────────
+  let activeFile     = 'model.py';
+  let currentCode    = '';
+  let selectedFile   = null;
 
-  let activeFile = 'model.py';
+  // ── DOM refs ──────────────────────────────────────────────────────────────
+  const pdfInput     = document.getElementById('pdfInput');
+  const executeBtn   = document.getElementById('executeBtn');
+  const executeBtnIcon  = document.getElementById('executeBtnIcon');
+  const executeBtnLabel = document.getElementById('executeBtnLabel');
+  const terminalOutput  = document.getElementById('terminalOutput');
+  const codeDisplay  = document.getElementById('codeDisplay');
+  const lineNumbers  = document.getElementById('lineNumbers');
+  const codeLoader   = document.getElementById('codeLoader');
+  const emptyState   = document.getElementById('emptyState');
+  const codeFilename = document.getElementById('codeFilename');
+  const fileLabel    = document.getElementById('fileLabel');
+  const fileLabelText = document.getElementById('fileLabelText');
 
-  // ── tab switching ────────────────────────────────────────────────────
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      activeFile = tab.dataset.file;
-      fetchCode(activeFile);
-    });
-  });
-
-  // ── upload ──────────────────────────────────────────────────────────
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const fileInput = document.getElementById('pdfInput');
-    if (!fileInput.files.length) return;
-
-    submitBtn.disabled = true;
-    statusMsg.textContent = 'Uploading and running verification…';
-    statusMsg.className = 'status';
-    logBox.value = '';
-    codeBox.textContent = '';
-
-    const fd = new FormData();
-    fd.append('file', fileInput.files[0]);
-
+  // ── Health check ──────────────────────────────────────────────────────────
+  async function checkHealth() {
+    const el = document.getElementById('serverStatus');
     try {
-      const res  = await fetch(API_ORIGIN + '/api/upload-paper', { method: 'POST', body: fd });
-      const data = await res.json();
-
-      if (res.ok) {
-        const v = data.verification;
-        logBox.value = [
-          '=== stdout ===',
-          v.stdout || '(none)',
-          '',
-          '=== stderr ===',
-          v.stderr || '(none)',
-          '',
-          `Return code: ${v.returncode}`,
-          `Status: ${data.status}`,
-        ].join('\n');
-
-        statusMsg.textContent = data.message;
-        statusMsg.className   = 'status ' + (data.status === 'ok' ? 'ok' : 'err');
-
-        if (data.status === 'ok') {
-          fetchCode(activeFile);
-        }
+      const r = await fetch(API_ORIGIN + '/api/health', { signal: AbortSignal.timeout(4000) });
+      if (r.ok) {
+        el.innerHTML = '<i class="fa-solid fa-server mr-1 text-green-500"></i><span class="text-green-400">localhost:8000</span>';
       } else {
-        statusMsg.textContent = data.detail || 'Upload failed.';
-        statusMsg.className   = 'status err';
+        el.innerHTML = '<span class="text-red-400"><i class="fa-solid fa-xmark mr-1"></i>API error</span>';
       }
-    } catch (err) {
-      statusMsg.textContent = 'Network error: ' + err.message;
-      statusMsg.className   = 'status err';
-    } finally {
-      submitBtn.disabled = false;
+    } catch {
+      el.innerHTML = '<span class="text-red-400"><i class="fa-solid fa-xmark mr-1"></i>unreachable</span>';
+    }
+  }
+  checkHealth();
+
+  // ── File input ────────────────────────────────────────────────────────────
+  pdfInput.addEventListener('change', () => {
+    if (pdfInput.files.length) {
+      selectedFile = pdfInput.files[0];
+      fileLabelText.textContent = selectedFile.name;
+      fileLabel.classList.remove('hidden');
+      executeBtn.disabled = false;
     }
   });
 
-  // ── fetch source code ────────────────────────────────────────────────
-  async function fetchCode(filename) {
-    codeBox.textContent = 'Loading ' + filename + '…';
+  // ── Drag and drop ─────────────────────────────────────────────────────────
+  const dropZone = document.getElementById('dropZone');
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f && f.name.toLowerCase().endsWith('.pdf')) {
+      selectedFile = f;
+      fileLabelText.textContent = f.name;
+      fileLabel.classList.remove('hidden');
+      executeBtn.disabled = false;
+    } else {
+      termLog('error', 'Only PDF files are accepted.');
+    }
+  });
+
+  // ── Terminal helpers ──────────────────────────────────────────────────────
+  function termLog(type, text) {
+    const colours = {
+      info:    'text-slate-400',
+      success: 'text-green-400',
+      error:   'text-red-400',
+      warn:    'text-yellow-400',
+      cmd:     'text-blue-400',
+      pass:    'text-green-300',
+    };
+    const prefix = {
+      info: '  ', success: '✓ ', error: '✗ ', warn: '⚠ ', cmd: '$ ', pass: '  ',
+    };
+    const cls  = colours[type]  || 'text-slate-300';
+    const pre  = prefix[type]   || '  ';
+    const lines = String(text).split('\n');
+    lines.forEach(line => {
+      if (!line && lines.length > 1) return; // skip blank separator lines inside multi-line
+      const div = document.createElement('div');
+      div.className = cls;
+      div.textContent = pre + line;
+      terminalOutput.appendChild(div);
+    });
+    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+  }
+
+  function clearTerminal() {
+    terminalOutput.innerHTML = '';
+    termLog('info', '── terminal cleared ────────────────────');
+  }
+
+  function setStage(stage) {
+    // stage: 'upload' | 'verify' | 'generate'
+    ['upload','verify','generate'].forEach(s => {
+      const el = document.getElementById('stage-' + s);
+      el.className = 'px-2 py-0.5 rounded border text-xs font-mono ' +
+        (s === stage
+          ? 'border-blue-500 text-blue-400 bg-blue-950/40'
+          : 'border-slate-700 text-slate-500');
+    });
+  }
+
+  // ── Execute pipeline (upload) ─────────────────────────────────────────────
+  async function runPipeline() {
+    if (!selectedFile) return;
+    executeBtn.disabled = true;
+    executeBtnIcon.className  = 'fa-solid fa-circle-notch fa-spin';
+    executeBtnLabel.textContent = 'Processing…';
+
+    setStage('upload');
+    termLog('cmd', 'paper2code --exec "' + selectedFile.name + '"');
+    termLog('info', 'Uploading to /api/upload-paper…');
+
+    const fd = new FormData();
+    fd.append('file', selectedFile);
+
+    try {
+      setStage('verify');
+      termLog('info', 'Running IBM Bob verification sandbox…');
+
+      const res  = await fetch(API_ORIGIN + '/api/upload-paper', { method: 'POST', body: fd });
+      const data = await res.json();
+
+      if (!res.ok) {
+        termLog('error', data.detail || 'Upload failed (' + res.status + ')');
+        return;
+      }
+
+      // Print stdout line by line with pass/fail colouring
+      const stdout = (data.verification.stdout || '').trim();
+      if (stdout) {
+        stdout.split('\n').forEach(line => {
+          const type = line.includes('[PASS]') ? 'pass'
+                     : line.includes('[FAIL]') ? 'error'
+                     : 'info';
+          termLog(type, line);
+        });
+      }
+
+      if (data.verification.stderr && data.verification.stderr.trim()) {
+        termLog('warn', '── stderr ──');
+        data.verification.stderr.trim().split('\n').forEach(l => termLog('warn', l));
+      }
+
+      termLog('info', '──────────────────────────────────────────');
+      if (data.status === 'ok') {
+        setStage('generate');
+        termLog('success', data.message);
+        termLog('success', 'Code ready — switch tabs to view generated source.');
+        // Auto-load the active tab
+        fetchCode(activeFile, true);
+      } else {
+        termLog('error', data.message);
+      }
+
+    } catch (err) {
+      termLog('error', 'Network error: ' + err.message);
+    } finally {
+      executeBtn.disabled = false;
+      executeBtnIcon.className  = 'fa-solid fa-bolt';
+      executeBtnLabel.textContent = 'Execute Agentic Pipeline';
+    }
+  }
+
+  // ── Tab switching ─────────────────────────────────────────────────────────
+  function switchTab(btn, filename) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFile = filename;
+    fetchCode(filename, false);
+  }
+
+  // ── Fetch source code ─────────────────────────────────────────────────────
+  async function fetchCode(filename, fromPipeline = false) {
+    codeFilename.textContent = filename;
+    codeLoader.classList.remove('hidden');
+    emptyState.classList.add('hidden');
+
     try {
       const res  = await fetch(API_ORIGIN + '/api/get-code/' + filename);
       const data = await res.json();
       if (res.ok) {
-        codeBox.textContent = data.content;
+        setCode(data.content);
+        if (fromPipeline) termLog('cmd', 'cat src/' + filename + ' | loaded into viewer');
       } else {
-        codeBox.textContent = 'Error: ' + (data.detail || 'unknown');
+        setCode('# Error: ' + (data.detail || 'Could not load ' + filename));
       }
     } catch (err) {
-      codeBox.textContent = 'Network error: ' + err.message;
+      setCode('# Network error: ' + err.message);
+    } finally {
+      codeLoader.classList.add('hidden');
     }
   }
 
-  // Load model.py on first visit
+  function setCode(text) {
+    currentCode = text;
+    codeDisplay.textContent = text;
+
+    // Update line numbers
+    const count = (text.match(/\n/g) || []).length + 1;
+    lineNumbers.innerHTML = Array.from({length: count}, (_, i) => i + 1).join('\n');
+  }
+
+  // ── Copy to clipboard ─────────────────────────────────────────────────────
+  async function copyCode() {
+    if (!currentCode) return;
+    try {
+      await navigator.clipboard.writeText(currentCode);
+      const icon  = document.getElementById('copyIcon');
+      const label = document.getElementById('copyLabel');
+      icon.className  = 'fa-solid fa-check';
+      label.textContent = 'Copied!';
+      setTimeout(() => {
+        icon.className  = 'fa-regular fa-copy';
+        label.textContent = 'Copy';
+      }, 2000);
+    } catch {
+      termLog('warn', 'Clipboard write failed — copy manually.');
+    }
+  }
+
+  // ── Boot: load model.py on first visit ───────────────────────────────────
   fetchCode('model.py');
-</script>
+  </script>
+
 </body>
 </html>
