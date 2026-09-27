@@ -122,9 +122,11 @@ async def get_code(filename: str):
     path = SRC_DIR / filename
     if not path.exists():
         raise HTTPException(status_code=404, detail=f"{filename} not found in src/.")
+    code_text = path.read_text(encoding="utf-8")
     return JSONResponse({
         "filename": filename,
-        "content": path.read_text(encoding="utf-8"),
+        "content": code_text,   # legacy key — kept for compatibility
+        "code": code_text,      # canonical key used by React UI
     })
 
 
