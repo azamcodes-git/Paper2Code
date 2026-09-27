@@ -4,73 +4,80 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Paper2Code — IBM Bob 2.0</title>
-
-  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
-  <!-- React 18 + Babel -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- JetBrains Mono -->
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
-
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <script>
     tailwind.config = {
-      theme: {
-        extend: {
-          colors: { 'slate-950': '#020617' },
-          fontFamily: { mono: ['"JetBrains Mono"','Consolas','monospace'] },
-          boxShadow: {
-            'glow-blue': '0 0 18px 2px rgba(59,130,246,0.45)',
-            'glow-sm':   '0 0 8px 1px rgba(59,130,246,0.25)',
-          },
-        },
-      },
+      theme: { extend: {
+        colors: { 'slate-950':'#020617' },
+        fontFamily: { mono:['"JetBrains Mono"','Consolas','monospace'], sans:['Inter','system-ui','sans-serif'] },
+      }},
     };
   </script>
-
   <style>
-    ::-webkit-scrollbar{width:5px;height:5px}
+    *{font-family:'Inter',system-ui,sans-serif}
+    ::-webkit-scrollbar{width:4px;height:4px}
     ::-webkit-scrollbar-track{background:#0f172a}
-    ::-webkit-scrollbar-thumb{background:#334155;border-radius:3px}
+    ::-webkit-scrollbar-thumb{background:#1e3a5f;border-radius:2px}
     ::-webkit-scrollbar-thumb:hover{background:#3b82f6}
 
-    @keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,.55)}50%{box-shadow:0 0 0 7px rgba(59,130,246,0)}}
-    @keyframes pulse-green{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.6)}50%{box-shadow:0 0 0 5px rgba(34,197,94,0)}}
-    @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes scan{0%{top:0}100%{top:100%}}
-    @keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+    /* animations */
+    @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes pulse-blue{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,.5)}60%{box-shadow:0 0 0 8px rgba(59,130,246,0)}}
+    @keyframes pulse-green{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.5)}60%{box-shadow:0 0 0 6px rgba(34,197,94,0)}}
+    @keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes glow-text{0%,100%{text-shadow:0 0 8px rgba(59,130,246,.6)}50%{text-shadow:0 0 20px rgba(59,130,246,1),0 0 40px rgba(59,130,246,.4)}}
+    @keyframes border-dance{0%{border-color:rgba(59,130,246,.3)}50%{border-color:rgba(59,130,246,.8)}100%{border-color:rgba(59,130,246,.3)}}
+    @keyframes nb-pulse{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,.6),0 4px 20px rgba(59,130,246,.3)}50%{box-shadow:0 0 0 6px rgba(59,130,246,0),0 4px 30px rgba(59,130,246,.5)}}
+    @keyframes scan-line{0%{top:-4px}100%{top:100%}}
+    @keyframes step-fill{from{width:0}to{width:100%}}
 
-    .pulse-ring{animation:pulse-ring 2s infinite}
-    .pulse-green{animation:pulse-green 2s infinite}
-    .cursor-blink{display:inline-block;width:7px;height:13px;background:#22c55e;animation:blink 1s step-end infinite;vertical-align:middle;margin-left:2px}
-    .fade-up{animation:fadeUp .3s ease both}
+    .fade-up{animation:fadeUp .35s ease both}
+    .fade-in{animation:fadeIn .4s ease both}
+    .pulse-blue{animation:pulse-blue 2s infinite}
+    .pulse-green-dot{animation:pulse-green 2s infinite}
+    .shimmer-bg{background:linear-gradient(90deg,#0f172a 25%,#1e293b 50%,#0f172a 75%);background-size:600px 100%;animation:shimmer 1.6s infinite}
+    .glow-title{animation:glow-text 3s ease-in-out infinite}
+    .nb-glow{animation:nb-pulse 2s ease-in-out infinite}
 
-    /* glassmorphism card */
-    .glass{background:rgba(15,23,42,.7);backdrop-filter:blur(12px);border:1px solid rgba(59,130,246,.15)}
+    /* glass card */
+    .glass{background:rgba(15,23,42,.75);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 
-    /* drag-over */
-    .drag-over{border-color:#3b82f6!important;background:rgba(59,130,246,.07)!important}
+    /* drag zone active */
+    .drag-active{border-color:#3b82f6!important;background:rgba(59,130,246,.06)!important;animation:border-dance 1.5s infinite}
 
     /* tab active */
-    .tab-active{color:#3b82f6;border-bottom:2px solid #3b82f6}
+    .tab-on{color:#3b82f6;border-bottom:2px solid #3b82f6}
+
+    /* step states */
+    .step-done .sc{background:#3b82f6;border-color:#3b82f6;color:#fff}
+    .step-now  .sc{border-color:#3b82f6;color:#3b82f6;box-shadow:0 0 12px rgba(59,130,246,.5)}
+    .step-wait .sc{border-color:#1e3a5f;color:#334155}
+    .step-done .sl{color:#60a5fa}
+    .step-now  .sl{color:#93c5fd}
+    .step-wait .sl{color:#1e3a5f}
+
+    /* connector line progress */
+    .conn-done{background:#3b82f6}
+    .conn-wait{background:#1e293b}
+
+    /* code pre */
+    .code-pre{font-family:'JetBrains Mono',Consolas,monospace;font-size:.74rem;line-height:1.75;white-space:pre;overflow-x:auto;tab-size:4}
+
+    /* term */
+    .term-text{font-family:'JetBrains Mono',Consolas,monospace;font-size:.71rem;line-height:1.7}
 
     /* scanline overlay */
-    .scanline{pointer-events:none;position:fixed;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.03) 0,rgba(0,0,0,.03) 1px,transparent 1px,transparent 2px);z-index:9999}
+    .scanline{pointer-events:none;position:fixed;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.025) 0,rgba(0,0,0,.025) 1px,transparent 1px,transparent 2px);z-index:9999}
 
-    /* code pane */
-    #code-pre{font-family:'JetBrains Mono',Consolas,monospace;font-size:.76rem;line-height:1.75;white-space:pre;overflow-x:auto;tab-size:4;color:#94a3b8}
-
-    /* shimmer skeleton */
-    .shimmer{background:linear-gradient(90deg,#1e293b 25%,#334155 50%,#1e293b 75%);background-size:400px 100%;animation:shimmer 1.4s infinite}
-
-    /* step connector */
-    .step-done .step-circle{background:#3b82f6;border-color:#3b82f6;color:#fff}
-    .step-active .step-circle{border-color:#3b82f6;color:#3b82f6;box-shadow:0 0 10px rgba(59,130,246,.5)}
-    .step-pending .step-circle{border-color:#334155;color:#475569}
+    /* gutter text */
+    .gutter{font-family:'JetBrains Mono',Consolas,monospace;font-size:.7rem;line-height:1.75}
   </style>
 </head>
 <body class="h-full bg-slate-950 text-slate-200 overflow-hidden">
@@ -78,99 +85,84 @@
 <div id="root" class="h-full flex flex-col"></div>
 
 <script type="text/babel">
-const { useState, useEffect, useRef, useCallback } = React;
+const { useState, useEffect, useRef } = React;
 
-/* ── Constants ───────────────────────────────────────────────────────────── */
+/* ── config ─────────────────────────────────────────────── */
 const API_PORT   = 8000;
-const API_ORIGIN = window.location.port === String(API_PORT)
-  ? '' : 'http://localhost:' + API_PORT;
+const API_ORIGIN = window.location.port === String(API_PORT) ? '' : 'http://localhost:' + API_PORT;
 
 const TABS = [
-  { file: 'model.py',           icon: 'fa-cube',      color: 'text-purple-400' },
-  { file: 'dataset.py',         icon: 'fa-database',  color: 'text-cyan-400'   },
-  { file: 'verify_tensors.py',  icon: 'fa-flask',     color: 'text-green-400'  },
+  { file:'model.py',          icon:'fa-cube',     col:'text-purple-400' },
+  { file:'dataset.py',        icon:'fa-database', col:'text-cyan-400'   },
+  { file:'verify_tensors.py', icon:'fa-flask',    col:'text-green-400'  },
 ];
 
-const PIPELINE_STEPS = [
-  'Parsing PDF',
-  'Extracting Architecture',
-  'Running Verification Sandbox',
-  'Generating Source',
+const STEPS = ['Parsing PDF','Extracting Architecture','Verifying Tensors','Building Notebook'];
+
+const ARCH = [
+  { model:'MLP',      layers:'Linear×4 · ReLU×3 · Dropout×3', input:'(N,162)', output:'(N,9)', params:'248,841', col:'text-purple-300' },
+  { model:'1D-CNN',   layers:'Conv1d×2 · MaxPool×2 · Linear×2', input:'(N,162)', output:'(N,9)', params:'681,609', col:'text-cyan-300'   },
+  { model:'LSTM',     layers:'LSTM(1→128) · Dropout · Linear',  input:'(N,162)', output:'(N,9)', params:'68,233',  col:'text-green-300'  },
+  { model:'CNN-LSTM', layers:'Conv1d · MaxPool · LSTM · Linear', input:'(N,162)', output:'(N,9)', params:'34,121',  col:'text-yellow-300' },
 ];
 
-/* Static architecture table derived from verified model outputs */
-const ARCH_ROWS = [
-  { component:'MLP',       layer:'Linear×4 + ReLU×3 + Dropout×3', input:'(N, 162)', output:'(N, 9)',  params:'248,841' },
-  { component:'1D-CNN',    layer:'Conv1d×2 + MaxPool×2 + Linear×2', input:'(N, 162)', output:'(N, 9)', params:'681,609' },
-  { component:'LSTM',      layer:'LSTM(1→128) + Linear',            input:'(N, 162)', output:'(N, 9)', params:'68,233'  },
-  { component:'CNN-LSTM',  layer:'Conv1d + MaxPool + LSTM + Linear', input:'(N, 162)', output:'(N, 9)', params:'34,121'  },
-  { component:'Dataset',   layer:'BeverageStainDataset',            input:'(N, 162)', output:'label()', params:'—'       },
-];
+/* ── helpers ─────────────────────────────────────────────── */
+const cx = (...a) => a.filter(Boolean).join(' ');
+const uid = () => Math.random().toString(36).slice(2);
+const delay = ms => new Promise(r => setTimeout(r, ms));
 
-/* ── Helpers ─────────────────────────────────────────────────────────────── */
-function cx(...args){ return args.filter(Boolean).join(' ') }
-
-function termLine(type, text){
-  const map = {
-    info:'text-slate-400', success:'text-green-400', error:'text-red-400',
-    warn:'text-yellow-400', cmd:'text-blue-400', pass:'text-green-300',
-  };
-  const pre = { info:'  ', success:'✓ ', error:'✗ ', warn:'⚠ ', cmd:'$ ', pass:'  ' };
-  return { type, text, cls: map[type]||'text-slate-300', pre: pre[type]||'  ', id: Math.random() };
+function mkLog(type, text) {
+  const cls = { info:'text-slate-400', success:'text-emerald-400', error:'text-red-400',
+                warn:'text-amber-400', cmd:'text-blue-400', pass:'text-emerald-300' };
+  const pfx = { info:'  ', success:'✓ ', error:'✗ ', warn:'⚠ ', cmd:'$ ', pass:'  ' };
+  return { id:uid(), text, cls:cls[type]||'text-slate-300', pfx:pfx[type]||'  ' };
 }
 
-/* ── Terminal ────────────────────────────────────────────────────────────── */
-function Terminal({ lines, onClear }){
-  const bottomRef = useRef();
-  useEffect(()=>{ bottomRef.current?.scrollIntoView({ behavior:'smooth' }) }, [lines]);
+/* ── Terminal ─────────────────────────────────────────────── */
+function Terminal({ logs, onClear }) {
+  const endRef = useRef();
+  useEffect(() => endRef.current?.scrollIntoView({ behavior:'smooth' }), [logs]);
   return (
-    <div className="flex flex-col flex-1 min-h-[200px] rounded-xl border border-slate-800 bg-slate-950 overflow-hidden glass">
-      {/* title bar */}
-      <div className="flex-shrink-0 flex items-center gap-2 px-3 py-2 bg-slate-900/80 border-b border-slate-800">
-        <span className="w-2.5 h-2.5 rounded-full bg-red-500/80"/>
-        <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80"/>
-        <span className="w-2.5 h-2.5 rounded-full bg-green-500/80"/>
-        <span className="ml-2 text-[11px] font-mono text-slate-500">agent-terminal</span>
-        <button onClick={onClear} className="ml-auto text-slate-600 hover:text-slate-400 text-xs transition-colors" title="clear">
+    <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-slate-800/80 bg-[#050d1a] overflow-hidden glass">
+      <div className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-slate-900/70 border-b border-slate-800/80">
+        <span className="w-2.5 h-2.5 rounded-full bg-red-500/70 cursor-pointer"/>
+        <span className="w-2.5 h-2.5 rounded-full bg-amber-500/70 cursor-pointer"/>
+        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/70 cursor-pointer"/>
+        <span className="ml-2 text-[10px] font-mono text-slate-600 tracking-wider">AGENT TERMINAL</span>
+        <button onClick={onClear} className="ml-auto text-slate-700 hover:text-slate-400 transition-colors text-[10px]" title="clear">
           <i className="fa-solid fa-trash-can"/>
         </button>
       </div>
-      {/* body */}
-      <div className="flex-1 overflow-y-auto p-3" style={{fontFamily:"'JetBrains Mono',Consolas,monospace",fontSize:'0.73rem',lineHeight:'1.7'}}>
-        {lines.map(l=>(
-          <div key={l.id} className={cx(l.cls,'fade-up')}>
-            <span className="select-none text-slate-600 mr-1">{l.pre}</span>{l.text}
+      <div className="flex-1 overflow-y-auto p-3 term-text">
+        {logs.map(l => (
+          <div key={l.id} className={cx('fade-up leading-relaxed', l.cls)}>
+            <span className="select-none opacity-40 mr-1.5">{l.pfx}</span>{l.text}
           </div>
         ))}
-        <div ref={bottomRef}/>
+        <div ref={endRef}/>
       </div>
     </div>
   );
 }
 
-/* ── Progress Steps ──────────────────────────────────────────────────────── */
-function PipelineProgress({ step }){
-  // step: -1=idle, 0..3=active, 4=done
+/* ── PipelineSteps ────────────────────────────────────────── */
+function PipelineSteps({ step }) {
   return (
-    <div className="flex items-center gap-1 w-full px-1 fade-up">
-      {PIPELINE_STEPS.map((label, i)=>{
+    <div className="flex items-start gap-0 fade-up">
+      {STEPS.map((label, i) => {
         const done   = step > i;
         const active = step === i;
-        const cls    = done ? 'step-done' : active ? 'step-active' : 'step-pending';
+        const cls    = done ? 'step-done' : active ? 'step-now' : 'step-wait';
         return (
           <React.Fragment key={i}>
             <div className={cx('flex flex-col items-center gap-1 flex-1', cls)}>
-              <div className="step-circle w-6 h-6 rounded-full border-2 flex items-center justify-center text-[10px] font-mono transition-all duration-300">
-                {done ? <i className="fa-solid fa-check text-[9px]"/> : i+1}
+              <div className="sc w-5 h-5 rounded-full border-2 flex items-center justify-center text-[9px] font-mono transition-all duration-400">
+                {done ? <i className="fa-solid fa-check text-[8px]"/> : i+1}
               </div>
-              <span className={cx('text-[9px] font-mono text-center leading-tight',
-                done ? 'text-blue-400' : active ? 'text-blue-300' : 'text-slate-600')}>
-                {label}
-              </span>
+              <span className="sl text-[8.5px] font-mono text-center leading-tight px-0.5">{label}</span>
             </div>
-            {i < PIPELINE_STEPS.length-1 && (
-              <div className={cx('flex-none w-4 h-px mb-4 transition-all duration-500',
-                done ? 'bg-blue-500' : 'bg-slate-700')}/>
+            {i < STEPS.length-1 && (
+              <div className={cx('flex-none h-px mt-2.5 w-3 transition-all duration-500', done ? 'conn-done' : 'conn-wait')}/>
             )}
           </React.Fragment>
         );
@@ -179,374 +171,373 @@ function PipelineProgress({ step }){
   );
 }
 
-/* ── Architecture Table ──────────────────────────────────────────────────── */
-function ArchTable({ visible }){
-  if(!visible) return (
-    <div className="flex flex-col items-center justify-center h-28 text-slate-700 gap-2">
-      <i className="fa-solid fa-table text-3xl"/>
-      <p className="text-xs font-mono">Run pipeline to see architecture metrics</p>
-    </div>
-  );
+/* ── ArchCard ─────────────────────────────────────────────── */
+function ArchCard({ m, delay:d }) {
   return (
-    <div className="overflow-x-auto fade-up">
-      <table className="w-full text-[11px] font-mono border-collapse">
-        <thead>
-          <tr className="text-slate-500 border-b border-slate-800">
-            <th className="text-left py-1.5 px-2 font-medium">Component</th>
-            <th className="text-left py-1.5 px-2 font-medium">Layer / Description</th>
-            <th className="text-left py-1.5 px-2 font-medium">Input Shape</th>
-            <th className="text-left py-1.5 px-2 font-medium">Output Shape</th>
-            <th className="text-right py-1.5 px-2 font-medium">Params</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ARCH_ROWS.map((r,i)=>(
-            <tr key={i} className={cx('border-b border-slate-800/60 hover:bg-slate-800/30 transition-colors',
-              i===0?'text-purple-300':i===1?'text-cyan-300':i===2?'text-green-300':i===3?'text-yellow-300':'text-slate-400')}>
-              <td className="py-1.5 px-2 font-semibold">{r.component}</td>
-              <td className="py-1.5 px-2 text-slate-400">{r.layer}</td>
-              <td className="py-1.5 px-2 text-slate-400">{r.input}</td>
-              <td className="py-1.5 px-2 text-slate-400">{r.output}</td>
-              <td className="py-1.5 px-2 text-right">{r.params}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-/* ── Code Viewer ─────────────────────────────────────────────────────────── */
-function CodeViewer({ code, loading, filename }){
-  const [copied, setCopied] = useState(false);
-
-  async function copy(){
-    if(!code) return;
-    await navigator.clipboard.writeText(code).catch(()=>{});
-    setCopied(true);
-    setTimeout(()=>setCopied(false), 2000);
-  }
-
-  const lines = code ? code.split('\n') : [];
-
-  if(loading) return (
-    <div className="flex-1 p-4 space-y-2">
-      {[...Array(18)].map((_,i)=>(
-        <div key={i} className="shimmer h-3 rounded" style={{width: (50+Math.random()*45)+'%', opacity: 1-i*0.04}}/>
-      ))}
-    </div>
-  );
-
-  if(!code) return (
-    <div className="flex-1 flex flex-col items-center justify-center text-slate-700 gap-3">
-      <i className="fa-solid fa-code text-4xl"/>
-      <p className="text-xs font-mono">Upload a paper to load generated source code</p>
-    </div>
-  );
-
-  return (
-    <div className="flex-1 overflow-auto relative fade-up">
-      {/* copy btn */}
-      <button onClick={copy}
-        className="absolute top-3 right-4 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-mono bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-slate-400 hover:text-white transition-all">
-        <i className={cx('text-[10px]', copied ? 'fa-solid fa-check text-green-400' : 'fa-regular fa-copy')}/>
-        {copied ? 'Copied!' : 'Copy'}
-      </button>
-      {/* gutter + code */}
-      <div className="flex min-h-full">
-        <div className="flex-shrink-0 select-none text-right text-slate-700 bg-slate-900/30 border-r border-slate-800/50 px-3 py-4"
-             style={{fontFamily:"'JetBrains Mono',monospace",fontSize:'0.72rem',lineHeight:'1.75',minWidth:'3rem'}}>
-          {lines.map((_,i)=><div key={i}>{i+1}</div>)}
-        </div>
-        <pre id="code-pre" className="flex-1 p-4 m-0 bg-transparent">{code}</pre>
+    <div className="fade-up glass rounded-lg p-2.5 border border-slate-800/60 hover:border-blue-900/60 transition-all"
+         style={{ animationDelay: d+'ms' }}>
+      <div className="flex items-center justify-between mb-1.5">
+        <span className={cx('text-xs font-semibold font-mono', m.col)}>{m.model}</span>
+        <span className="text-[10px] font-mono text-slate-500 bg-slate-900/80 px-1.5 py-0.5 rounded">
+          {m.params} params
+        </span>
+      </div>
+      <p className="text-[10px] text-slate-500 font-mono truncate mb-1">{m.layers}</p>
+      <div className="flex gap-1.5 text-[9.5px] font-mono">
+        <span className="bg-slate-900/80 px-1.5 py-0.5 rounded text-slate-400">{m.input}</span>
+        <i className="fa-solid fa-arrow-right text-slate-700 self-center text-[8px]"/>
+        <span className="bg-slate-900/80 px-1.5 py-0.5 rounded text-slate-400">{m.output}</span>
       </div>
     </div>
   );
 }
 
-/* ── Main App ────────────────────────────────────────────────────────────── */
-function App(){
-  const [serverOk,   setServerOk]   = useState(null);        // null|true|false
-  const [file,       setFile]       = useState(null);
-  const [dragOver,   setDragOver]   = useState(false);
-  const [busy,       setBusy]       = useState(false);
-  const [pipeStep,   setPipeStep]   = useState(-1);           // -1=idle, 0-3=running, 4=done
-  const [logs,       setLogs]       = useState([
-    termLine('info','── Paper2Code Agent Terminal ───────────'),
-    termLine('info','── IBM Bob 2.0 Verification Sandbox ────'),
-    termLine('info','$ awaiting input'),
+/* ── DownloadButton ────────────────────────────────────────── */
+function DownloadButton({ ready }) {
+  return (
+    <a href={ready ? API_ORIGIN + '/api/download-notebook' : undefined}
+       className={cx(
+         'flex items-center justify-center gap-2.5 w-full px-4 py-3 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300',
+         ready
+           ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 nb-glow cursor-pointer'
+           : 'bg-slate-800/60 text-slate-600 border border-slate-800 cursor-not-allowed'
+       )}>
+      <i className={cx('fa-solid', ready ? 'fa-download' : 'fa-lock', 'text-sm')}/>
+      <span>Download Executable Notebook (.ipynb)</span>
+      {ready && <i className="fa-solid fa-arrow-up-right-from-square text-xs opacity-70"/>}
+    </a>
+  );
+}
+
+/* ── CodeViewer ────────────────────────────────────────────── */
+function CodeViewer({ code, loading }) {
+  const [copied, setCopied] = useState(false);
+  async function doCopy() {
+    if (!code) return;
+    await navigator.clipboard.writeText(code).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+  const lines = code ? code.split('\n') : [];
+
+  if (loading) return (
+    <div className="flex-1 p-4 space-y-2.5">
+      {[...Array(20)].map((_,i) => (
+        <div key={i} className="shimmer-bg h-2.5 rounded-sm" style={{width:(40+Math.random()*55)+'%',opacity:Math.max(.15,1-i*.04)}}/>
+      ))}
+    </div>
+  );
+
+  if (!code) return (
+    <div className="flex-1 flex flex-col items-center justify-center text-slate-800 gap-3">
+      <i className="fa-solid fa-code text-5xl"/>
+      <p className="text-xs font-mono text-slate-700">Upload a paper to populate the code viewer</p>
+    </div>
+  );
+
+  return (
+    <div className="flex-1 overflow-auto relative fade-in">
+      {/* copy */}
+      <button onClick={doCopy}
+        className="absolute top-3 right-4 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-mono bg-slate-900/90 hover:bg-slate-800 border border-slate-700/60 text-slate-500 hover:text-white transition-all">
+        <i className={cx('text-[9px]', copied ? 'fa-solid fa-check text-emerald-400' : 'fa-regular fa-copy')}/>
+        {copied ? 'Copied!' : 'Copy'}
+      </button>
+      <div className="flex min-h-full">
+        <div className="gutter flex-shrink-0 select-none text-right text-slate-800 bg-[#070f1c] border-r border-slate-900 px-3 py-4" style={{minWidth:'3rem'}}>
+          {lines.map((_,i) => <div key={i}>{i+1}</div>)}
+        </div>
+        <pre className="code-pre flex-1 p-4 m-0 bg-transparent text-slate-400">{code}</pre>
+      </div>
+    </div>
+  );
+}
+
+/* ── App ───────────────────────────────────────────────────── */
+function App() {
+  const [serverOk,      setServerOk]      = useState(null);
+  const [notebookReady, setNotebookReady] = useState(false);
+  const [file,          setFile]          = useState(null);
+  const [drag,          setDrag]          = useState(false);
+  const [busy,          setBusy]          = useState(false);
+  const [pipeStep,      setPipeStep]      = useState(-1);
+  const [logs,          setLogs]          = useState([
+    mkLog('info','── Paper2Code  ·  IBM Bob 2.0  ──────────'),
+    mkLog('info','── Agentic Verification Sandbox ──────────'),
+    mkLog('cmd', 'awaiting input…'),
   ]);
-  const [activeTab,  setActiveTab]  = useState('model.py');
-  const [code,       setCode]       = useState('');
-  const [codeLoading,setCodeLoading]= useState(false);
-  const [archVisible,setArchVisible]= useState(false);
+  const [archVisible,  setArchVisible]   = useState(false);
+  const [activeTab,    setActiveTab]     = useState('model.py');
+  const [code,         setCode]          = useState('');
+  const [codeLoading,  setCodeLoading]   = useState(false);
   const fileInputRef = useRef();
 
-  /* health check */
-  useEffect(()=>{
-    fetch(API_ORIGIN+'/api/health',{signal:AbortSignal.timeout(4000)})
-      .then(r=>r.ok ? setServerOk(true) : setServerOk(false))
-      .catch(()=>setServerOk(false));
-  },[]);
+  /* health */
+  useEffect(() => {
+    fetch(API_ORIGIN+'/api/health', {signal:AbortSignal.timeout(5000)})
+      .then(r => r.json())
+      .then(d => { setServerOk(true); if (d.notebook_ready) setNotebookReady(true); })
+      .catch(() => setServerOk(false));
+  }, []);
 
-  /* fetch code on tab change */
-  useEffect(()=>{ loadCode(activeTab); },[activeTab]);
+  /* load code on tab change */
+  useEffect(() => { loadCode(activeTab); }, [activeTab]);
 
-  function addLog(...entries){ setLogs(l=>[...l,...entries]); }
-  function clearLogs(){ setLogs([termLine('info','── terminal cleared ────────────────────')]); }
+  function addLog(...ls) { setLogs(prev => [...prev, ...ls]); }
+  function clearLogs()   { setLogs([mkLog('info','── terminal cleared ─────────────────────')]); }
 
-  async function loadCode(filename){
-    setCodeLoading(true);
-    setCode('');
-    try{
-      const r = await fetch(API_ORIGIN+'/api/get-code/'+filename);
+  async function loadCode(fname) {
+    setCodeLoading(true); setCode('');
+    try {
+      const r = await fetch(API_ORIGIN+'/api/get-code/'+fname);
       const d = await r.json();
-      if(r.ok){
-        /* accept both key names for robustness */
-        setCode(d.code ?? d.content ?? '');
-      } else {
-        setCode('# Error: '+(d.detail||'Could not load '+filename));
-      }
-    }catch(e){
-      setCode('# Network error: '+e.message);
-    }finally{
-      setCodeLoading(false);
-    }
+      setCode(r.ok ? (d.code ?? d.content ?? '') : '# Error: '+(d.detail||fname));
+    } catch(e) { setCode('# Network error: '+e.message); }
+    finally { setCodeLoading(false); }
   }
 
-  /* drag & drop */
-  function onDragOver(e){ e.preventDefault(); setDragOver(true); }
-  function onDragLeave(){ setDragOver(false); }
-  function onDrop(e){
-    e.preventDefault(); setDragOver(false);
+  /* drag handlers */
+  const onDragOver  = e => { e.preventDefault(); setDrag(true); };
+  const onDragLeave = ()  => setDrag(false);
+  const onDrop      = e  => {
+    e.preventDefault(); setDrag(false);
     const f = e.dataTransfer.files[0];
-    if(f && f.name.toLowerCase().endsWith('.pdf')) setFile(f);
-    else addLog(termLine('error','Only PDF files are accepted.'));
-  }
-  function onFileChange(e){ if(e.target.files[0]) setFile(e.target.files[0]); }
+    if (f?.name.toLowerCase().endsWith('.pdf')) setFile(f);
+    else addLog(mkLog('error','Only .pdf files accepted.'));
+  };
+  const onFileChange = e => { if (e.target.files[0]) setFile(e.target.files[0]); };
 
-  /* execute pipeline */
-  async function runPipeline(){
-    if(!file||busy) return;
-    setBusy(true); setPipeStep(0); setArchVisible(false);
+  /* execute */
+  async function run() {
+    if (!file || busy) return;
+    setBusy(true); setArchVisible(false); setNotebookReady(false); setPipeStep(0);
 
-    addLog(
-      termLine('cmd', `paper2code --exec "${file.name}"`),
-      termLine('info','Step 1: Parsing PDF…'),
-    );
+    addLog(mkLog('cmd',  `paper2code --exec "${file.name}"`),
+           mkLog('info', 'Step 1 ─ Parsing PDF structure…'));
 
-    await delay(600); setPipeStep(1);
-    addLog(termLine('info','Step 2: Extracting architecture metadata…'));
+    await delay(550); setPipeStep(1);
+    addLog(mkLog('info','Step 2 ─ Extracting model architecture metadata…'));
 
-    await delay(500); setPipeStep(2);
-    addLog(termLine('info','Step 3: Uploading to /api/upload-paper…'));
+    await delay(450); setPipeStep(2);
+    addLog(mkLog('info','Step 3 ─ Uploading to /api/upload-paper…'));
 
-    const fd = new FormData();
-    fd.append('file', file);
-
-    try{
-      const r = await fetch(API_ORIGIN+'/api/upload-paper',{method:'POST',body:fd});
+    const fd = new FormData(); fd.append('file', file);
+    try {
+      const r = await fetch(API_ORIGIN+'/api/upload-paper', { method:'POST', body:fd });
       const d = await r.json();
+      if (!r.ok) { addLog(mkLog('error', d.detail||`HTTP ${r.status}`)); setPipeStep(-1); return; }
 
-      if(!r.ok){
-        addLog(termLine('error', d.detail||`Upload failed (${r.status})`));
-        setPipeStep(-1); return;
+      (d.verification.stdout||'').trim().split('\n').filter(Boolean).forEach(line => {
+        addLog(mkLog(line.includes('[PASS]') ? 'pass' : line.includes('[FAIL]') ? 'error' : 'info', line));
+      });
+
+      if (d.verification.stderr?.trim()) {
+        d.verification.stderr.trim().split('\n').filter(Boolean).forEach(l => addLog(mkLog('warn', l)));
       }
 
-      const stdout = (d.verification.stdout||'').trim();
-      if(stdout){
-        stdout.split('\n').forEach(line=>{
-          const t = line.includes('[PASS]')?'pass':line.includes('[FAIL]')?'error':'info';
-          addLog(termLine(t, line));
-        });
-      }
-      if(d.verification.stderr?.trim()){
-        addLog(termLine('warn','── stderr ──'));
-        d.verification.stderr.trim().split('\n').forEach(l=>addLog(termLine('warn',l)));
-      }
+      addLog(mkLog('info','──────────────────────────────────────────'));
 
-      addLog(termLine('info','────────────────────────────────────────'));
-
-      if(d.status==='ok'){
-        setPipeStep(3);
-        await delay(400); setPipeStep(4);
-        addLog(
-          termLine('success', d.message),
-          termLine('success','Code ready — tabs updated.'),
-          termLine('cmd',`cat src/${activeTab} | loaded into viewer`),
-        );
+      if (d.status === 'ok') {
+        await delay(400); setPipeStep(3);
+        await delay(350); setPipeStep(4);
+        addLog(mkLog('success', d.message),
+               mkLog('success', 'Notebook generated ─ ready for Colab / Jupyter.'),
+               mkLog('cmd',     `cat src/${activeTab} → code viewer`));
         setArchVisible(true);
+        setNotebookReady(d.notebook_ready === true);
         loadCode(activeTab);
       } else {
-        addLog(termLine('error', d.message));
+        addLog(mkLog('error', d.message));
         setPipeStep(-1);
       }
-    }catch(e){
-      addLog(termLine('error','Network error: '+e.message));
+    } catch(e) {
+      addLog(mkLog('error','Network error: '+e.message));
       setPipeStep(-1);
-    }finally{
-      setBusy(false);
-    }
+    } finally { setBusy(false); }
   }
 
-  function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
-
-  /* nav stage label */
-  const stageLabel = pipeStep < 0 ? 'Idle' : pipeStep < 2 ? 'Upload' : pipeStep < 4 ? 'Verify' : 'Generate';
-  const stageColor = pipeStep===4 ? 'text-green-400 border-green-600/40 bg-green-950/30'
-    : pipeStep>=0 ? 'text-blue-400 border-blue-600/40 bg-blue-950/30'
-    : 'text-slate-500 border-slate-700 bg-slate-900/30';
+  const stageTxt = pipeStep < 0 ? 'Idle' : pipeStep < 2 ? 'Upload' : pipeStep < 4 ? 'Verify' : 'Complete';
+  const stageCls = pipeStep === 4 ? 'text-emerald-400 border-emerald-700/40 bg-emerald-950/30'
+    : pipeStep >= 0 ? 'text-blue-400 border-blue-700/40 bg-blue-950/30'
+    : 'text-slate-600 border-slate-800 bg-slate-900/30';
 
   return (
     <div className="h-full flex flex-col">
 
       {/* ── NAVBAR ── */}
-      <header className="flex-shrink-0 flex items-center justify-between px-5 py-2.5 bg-slate-900 border-b border-slate-800">
+      <header className="flex-shrink-0 flex items-center justify-between px-5 py-2.5 bg-[#050d1a] border-b border-slate-900">
         <div className="flex items-center gap-3">
-          <i className="fa-solid fa-microchip text-blue-500 text-base"/>
-          <span className="text-white font-semibold text-sm tracking-wide">Paper2Code</span>
-          <span className="text-[11px] font-mono bg-blue-600/20 text-blue-400 border border-blue-600/40 px-2 py-0.5 rounded-full">
+          <div className="w-7 h-7 rounded-lg bg-blue-600/20 border border-blue-600/30 flex items-center justify-center">
+            <i className="fa-solid fa-microchip text-blue-500 text-sm"/>
+          </div>
+          <span className="text-white font-bold text-sm tracking-wide glow-title">Paper2Code</span>
+          <span className="text-[10px] font-mono bg-blue-950/60 text-blue-400 border border-blue-800/40 px-2 py-0.5 rounded-full tracking-wide">
             IBM Bob 2.0
           </span>
         </div>
 
-        {/* pipeline stage badge */}
-        <span className={cx('text-[11px] font-mono border px-2.5 py-0.5 rounded-full transition-all duration-500', stageColor)}>
-          {pipeStep>=0 && pipeStep<4 && <i className="fa-solid fa-circle-notch fa-spin mr-1 text-[9px]"/>}
-          {pipeStep===4 && <i className="fa-solid fa-check mr-1 text-[9px]"/>}
-          {stageLabel}
+        <span className={cx('text-[10px] font-mono border px-2.5 py-0.5 rounded-full transition-all duration-500', stageCls)}>
+          {busy && <i className="fa-solid fa-circle-notch fa-spin mr-1 text-[8px]"/>}
+          {pipeStep===4 && <i className="fa-solid fa-check mr-1 text-[8px]"/>}
+          {stageTxt}
         </span>
 
-        {/* server status */}
-        <div className="flex items-center gap-2 text-[11px] font-mono">
-          <span className={cx('w-2 h-2 rounded-full inline-block',
-            serverOk===null?'bg-yellow-500':serverOk?'bg-green-500 pulse-green':'bg-red-500')}/>
-          <span className={serverOk===null?'text-yellow-400':serverOk?'text-green-400':'text-red-400'}>
+        <div className="flex items-center gap-2 text-[10px] font-mono">
+          <span className={cx('w-2 h-2 rounded-full inline-block transition-all',
+            serverOk===null?'bg-amber-500':serverOk?'bg-emerald-500 pulse-green-dot':'bg-red-500')}/>
+          <span className={serverOk===null?'text-amber-400':serverOk?'text-emerald-400':'text-red-400'}>
             {serverOk===null?'connecting…':serverOk?'localhost:8000':'unreachable'}
           </span>
         </div>
       </header>
 
-      {/* wrong-origin warning */}
-      {API_ORIGIN && (
-        <div className="flex-shrink-0 flex items-center gap-3 px-5 py-1.5 bg-amber-950/50 border-b border-amber-700/30 text-amber-300 text-[11px] font-mono">
-          <i className="fa-solid fa-triangle-exclamation text-amber-400"/>
-          Open at <a href={API_ORIGIN} className="underline text-amber-200 hover:text-white">{API_ORIGIN}</a>
-          — API calls may fail from this origin.
+      {/* wrong-origin banner */}
+      {!!API_ORIGIN && (
+        <div className="flex-shrink-0 flex items-center gap-2 px-5 py-1.5 bg-amber-950/40 border-b border-amber-900/30 text-amber-400 text-[10px] font-mono">
+          <i className="fa-solid fa-triangle-exclamation text-amber-500"/>
+          Open at <a href={API_ORIGIN} className="underline hover:text-white ml-1">{API_ORIGIN}</a>
+          &nbsp;— API calls require FastAPI origin.
         </div>
       )}
 
       {/* ── WORKSPACE ── */}
-      <main className="flex flex-1 overflow-hidden">
+      <main className="flex flex-1 overflow-hidden gap-0">
 
-        {/* ────── LEFT PANE ────── */}
-        <aside className="w-[340px] flex-shrink-0 flex flex-col border-r border-slate-800 bg-slate-900/40 overflow-y-auto">
-          <div className="px-4 pt-4 pb-2">
-            <p className="text-[10px] font-mono text-blue-400 uppercase tracking-widest mb-3">
-              <i className="fa-solid fa-upload mr-1.5"/>Input Pipeline
+        {/* ════ LEFT PANEL ════ */}
+        <aside className="w-[320px] flex-shrink-0 flex flex-col border-r border-slate-900 bg-[#07101d] overflow-y-auto">
+          <div className="px-4 pt-4 space-y-3 pb-2">
+
+            {/* section label */}
+            <p className="text-[9.5px] font-mono text-blue-500/80 uppercase tracking-[.2em] flex items-center gap-1.5">
+              <i className="fa-solid fa-terminal"/> Input Pipeline
             </p>
 
             {/* drop zone */}
             <div
               className={cx(
-                'rounded-xl border-2 border-dashed border-slate-700 bg-slate-900 p-5 cursor-pointer transition-all duration-200',
-                'hover:border-blue-600/60 hover:bg-blue-950/10 flex flex-col items-center gap-2 select-none',
-                dragOver && 'drag-over'
+                'relative rounded-xl border-2 border-dashed border-slate-800 bg-slate-900/40 p-5',
+                'flex flex-col items-center gap-2 cursor-pointer select-none transition-all duration-200',
+                'hover:border-blue-800/60 hover:bg-blue-950/10',
+                drag && 'drag-active'
               )}
-              onClick={()=>fileInputRef.current.click()}
-              onDragOver={onDragOver}
-              onDragLeave={onDragLeave}
-              onDrop={onDrop}
+              onClick={() => fileInputRef.current.click()}
+              onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}
             >
-              <div className="w-11 h-11 rounded-full bg-blue-600/10 border border-blue-600/25 flex items-center justify-center">
-                <i className="fa-solid fa-file-pdf text-blue-500 text-lg"/>
+              <div className={cx(
+                'w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200',
+                file ? 'bg-emerald-950/50 border border-emerald-800/50' : 'bg-blue-950/40 border border-blue-900/40'
+              )}>
+                <i className={cx('text-xl', file ? 'fa-solid fa-file-check text-emerald-400' : 'fa-solid fa-file-pdf text-blue-500')}/>
               </div>
               {file ? (
-                <span className="text-[11px] font-mono text-green-400 bg-green-950/30 border border-green-800/40 px-3 py-1 rounded-full max-w-full truncate">
-                  <i className="fa-solid fa-check mr-1"/>{file.name}
-                </span>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-[11px] font-mono text-emerald-400 font-medium">{file.name}</span>
+                  <span className="text-[9.5px] text-slate-600">{(file.size/1024).toFixed(1)} KB</span>
+                </div>
               ) : (
-                <>
-                  <p className="text-slate-300 text-sm font-medium">Drop PDF here</p>
-                  <p className="text-slate-500 text-xs">or click to browse</p>
-                </>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-slate-300">Drop PDF here</p>
+                  <p className="text-[11px] text-slate-600 mt-0.5">or click to browse</p>
+                </div>
+              )}
+              {drag && (
+                <div className="absolute inset-0 rounded-xl flex items-center justify-center bg-blue-950/20 pointer-events-none">
+                  <i className="fa-solid fa-cloud-arrow-up text-blue-400 text-2xl"/>
+                </div>
               )}
             </div>
             <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={onFileChange}/>
 
             {/* execute button */}
             <button
-              onClick={runPipeline}
-              disabled={!file||busy}
+              onClick={run}
+              disabled={!file || busy}
               className={cx(
-                'mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold tracking-wide transition-all duration-200',
-                'bg-blue-600 hover:bg-blue-500 text-white',
-                (!file||busy) ? 'opacity-40 cursor-not-allowed' : 'pulse-ring'
-              )}
-            >
+                'w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold tracking-wide transition-all duration-200',
+                (!file||busy)
+                  ? 'bg-slate-800/60 text-slate-600 border border-slate-800 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white pulse-blue'
+              )}>
               <i className={cx('text-sm', busy ? 'fa-solid fa-circle-notch fa-spin' : 'fa-solid fa-bolt')}/>
-              {busy ? 'Processing…' : 'Execute Agentic Pipeline'}
+              {busy ? 'Processing Pipeline…' : 'Execute Agentic Pipeline'}
             </button>
 
             {/* progress steps */}
-            {pipeStep >= 0 && (
-              <div className="mt-3">
-                <PipelineProgress step={pipeStep===4 ? 4 : pipeStep}/>
-              </div>
-            )}
+            {pipeStep >= 0 && <PipelineSteps step={Math.min(pipeStep, 4)}/>}
           </div>
 
           {/* divider */}
-          <div className="flex items-center gap-2 px-4 py-2 text-slate-700">
-            <div className="flex-1 h-px bg-slate-800"/>
-            <span className="text-[10px] font-mono uppercase tracking-widest text-slate-600">Terminal</span>
-            <div className="flex-1 h-px bg-slate-800"/>
+          <div className="flex items-center gap-2 px-4 py-2.5">
+            <div className="flex-1 h-px bg-slate-900"/>
+            <span className="text-[9px] font-mono uppercase tracking-[.18em] text-slate-700">Logs</span>
+            <div className="flex-1 h-px bg-slate-900"/>
           </div>
 
-          {/* terminal */}
-          <div className="flex-1 flex flex-col px-4 pb-4">
-            <Terminal lines={logs} onClear={clearLogs}/>
+          {/* terminal — fills rest of left panel */}
+          <div className="flex flex-col flex-1 min-h-0 px-4 pb-4">
+            <Terminal logs={logs} onClear={clearLogs}/>
           </div>
         </aside>
 
-        {/* ────── RIGHT PANE ────── */}
-        <section className="flex flex-col flex-1 min-w-0">
+        {/* ════ RIGHT WORKSPACE ════ */}
+        <section className="flex flex-col flex-1 min-w-0 overflow-hidden bg-[#050d1a]">
 
-          {/* architecture table */}
-          <div className="flex-shrink-0 px-4 pt-3 pb-0">
-            <div className="glass rounded-xl p-3 mb-3">
-              <p className="text-[10px] font-mono text-blue-400 uppercase tracking-widest mb-2">
-                <i className="fa-solid fa-sitemap mr-1.5"/>Extracted Architecture Metrics
-              </p>
-              <ArchTable visible={archVisible}/>
+          {/* ── Architecture Grid ── */}
+          <div className="flex-shrink-0 px-4 pt-3">
+            <div className="glass rounded-xl border border-slate-800/60 p-3 mb-3">
+              <div className="flex items-center justify-between mb-2.5">
+                <p className="text-[9.5px] font-mono text-blue-500/80 uppercase tracking-[.18em] flex items-center gap-1.5">
+                  <i className="fa-solid fa-sitemap"/> Architecture Metrics
+                </p>
+                {!archVisible && (
+                  <span className="text-[9.5px] font-mono text-slate-700">run pipeline to populate</span>
+                )}
+              </div>
+              {archVisible ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {ARCH.map((m,i) => <ArchCard key={m.model} m={m} delay={i*60}/>)}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {[...Array(4)].map((_,i) => (
+                    <div key={i} className="h-16 rounded-lg shimmer-bg opacity-30"/>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Download notebook button */}
+            <div className="mb-3">
+              <DownloadButton ready={notebookReady}/>
+              {notebookReady && (
+                <p className="text-[9.5px] font-mono text-slate-600 text-center mt-1.5 fade-in">
+                  <i className="fa-brands fa-google text-blue-600 mr-1"/>Open in Google Colab &nbsp;·&nbsp;
+                  <i className="fa-solid fa-book mr-1 text-amber-600"/>Jupyter Lab compatible
+                </p>
+              )}
             </div>
           </div>
 
-          {/* code explorer */}
+          {/* ── Code Explorer ── */}
           <div className="flex flex-col flex-1 min-h-0 px-4 pb-4">
-            <div className="glass rounded-xl flex flex-col flex-1 min-h-0 overflow-hidden">
+            <div className="glass rounded-xl border border-slate-800/60 flex flex-col flex-1 min-h-0 overflow-hidden">
               {/* tab bar */}
-              <div className="flex-shrink-0 flex items-center border-b border-slate-800 bg-slate-900/60 px-3">
-                {TABS.map(t=>(
-                  <button
-                    key={t.file}
-                    onClick={()=>setActiveTab(t.file)}
+              <div className="flex-shrink-0 flex items-center border-b border-slate-800/80 bg-slate-900/30 px-3">
+                <span className="text-[9px] font-mono text-slate-700 uppercase tracking-widest mr-3">Explorer</span>
+                {TABS.map(t => (
+                  <button key={t.file} onClick={() => setActiveTab(t.file)}
                     className={cx(
-                      'flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-mono border-b-2 border-transparent transition-all hover:text-slate-200',
-                      activeTab===t.file ? 'tab-active' : 'text-slate-500'
-                    )}
-                  >
-                    <i className={cx('fa-solid', t.icon, t.color, 'text-[10px]')}/>
+                      'flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-mono border-b-2 border-transparent transition-all duration-150 hover:text-slate-300',
+                      activeTab===t.file ? 'tab-on' : 'text-slate-600'
+                    )}>
+                    <i className={cx('fa-solid text-[9px]', t.icon, activeTab===t.file ? t.col : 'text-slate-700')}/>
                     {t.file}
                   </button>
                 ))}
-                <div className="ml-auto flex items-center gap-2 py-2 pr-1">
-                  <span className="text-[10px] font-mono text-slate-600">{activeTab}</span>
-                </div>
+                <div className="ml-auto text-[9px] font-mono text-slate-700 py-2 pr-1">{activeTab}</div>
               </div>
-
               {/* code body */}
-              <CodeViewer code={code} loading={codeLoading} filename={activeTab}/>
+              <CodeViewer code={code} loading={codeLoading}/>
             </div>
           </div>
 
