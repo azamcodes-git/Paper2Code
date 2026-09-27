@@ -14,7 +14,10 @@
     tailwind.config = {
       theme: { extend: {
         colors: { 'slate-950':'#020617' },
-        fontFamily: { mono:['"JetBrains Mono"','Consolas','monospace'], sans:['Inter','system-ui','sans-serif'] },
+        fontFamily: {
+          mono:['"JetBrains Mono"','Consolas','monospace'],
+          sans:['Inter','system-ui','sans-serif']
+        },
       }},
     };
   </script>
@@ -25,7 +28,6 @@
     ::-webkit-scrollbar-thumb{background:#1e3a5f;border-radius:2px}
     ::-webkit-scrollbar-thumb:hover{background:#3b82f6}
 
-    /* animations */
     @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     @keyframes pulse-blue{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,.5)}60%{box-shadow:0 0 0 8px rgba(59,130,246,0)}}
@@ -35,8 +37,6 @@
     @keyframes glow-text{0%,100%{text-shadow:0 0 8px rgba(59,130,246,.6)}50%{text-shadow:0 0 20px rgba(59,130,246,1),0 0 40px rgba(59,130,246,.4)}}
     @keyframes border-dance{0%{border-color:rgba(59,130,246,.3)}50%{border-color:rgba(59,130,246,.8)}100%{border-color:rgba(59,130,246,.3)}}
     @keyframes nb-pulse{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,.6),0 4px 20px rgba(59,130,246,.3)}50%{box-shadow:0 0 0 6px rgba(59,130,246,0),0 4px 30px rgba(59,130,246,.5)}}
-    @keyframes scan-line{0%{top:-4px}100%{top:100%}}
-    @keyframes step-fill{from{width:0}to{width:100%}}
 
     .fade-up{animation:fadeUp .35s ease both}
     .fade-in{animation:fadeIn .4s ease both}
@@ -45,17 +45,12 @@
     .shimmer-bg{background:linear-gradient(90deg,#0f172a 25%,#1e293b 50%,#0f172a 75%);background-size:600px 100%;animation:shimmer 1.6s infinite}
     .glow-title{animation:glow-text 3s ease-in-out infinite}
     .nb-glow{animation:nb-pulse 2s ease-in-out infinite}
+    .fa-spin-custom{animation:spin .8s linear infinite;display:inline-block}
 
-    /* glass card */
     .glass{background:rgba(15,23,42,.75);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-
-    /* drag zone active */
     .drag-active{border-color:#3b82f6!important;background:rgba(59,130,246,.06)!important;animation:border-dance 1.5s infinite}
-
-    /* tab active */
     .tab-on{color:#3b82f6;border-bottom:2px solid #3b82f6}
 
-    /* step states */
     .step-done .sc{background:#3b82f6;border-color:#3b82f6;color:#fff}
     .step-now  .sc{border-color:#3b82f6;color:#3b82f6;box-shadow:0 0 12px rgba(59,130,246,.5)}
     .step-wait .sc{border-color:#1e3a5f;color:#334155}
@@ -63,21 +58,20 @@
     .step-now  .sl{color:#93c5fd}
     .step-wait .sl{color:#1e3a5f}
 
-    /* connector line progress */
     .conn-done{background:#3b82f6}
     .conn-wait{background:#1e293b}
 
-    /* code pre */
     .code-pre{font-family:'JetBrains Mono',Consolas,monospace;font-size:.74rem;line-height:1.75;white-space:pre;overflow-x:auto;tab-size:4}
-
-    /* term */
     .term-text{font-family:'JetBrains Mono',Consolas,monospace;font-size:.71rem;line-height:1.7}
-
-    /* scanline overlay */
     .scanline{pointer-events:none;position:fixed;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.025) 0,rgba(0,0,0,.025) 1px,transparent 1px,transparent 2px);z-index:9999}
-
-    /* gutter text */
     .gutter{font-family:'JetBrains Mono',Consolas,monospace;font-size:.7rem;line-height:1.75}
+
+    /* Stable shimmer placeholder widths — avoids Math.random() in render */
+    .sh-w-1{width:62%}.sh-w-2{width:48%}.sh-w-3{width:75%}.sh-w-4{width:41%}
+    .sh-w-5{width:58%}.sh-w-6{width:83%}.sh-w-7{width:36%}.sh-w-8{width:70%}
+    .sh-w-9{width:55%}.sh-w-10{width:44%}.sh-w-11{width:67%}.sh-w-12{width:79%}
+    .sh-w-13{width:52%}.sh-w-14{width:38%}.sh-w-15{width:71%}.sh-w-16{width:46%}
+    .sh-w-17{width:63%}.sh-w-18{width:57%}.sh-w-19{width:82%}.sh-w-20{width:49%}
   </style>
 </head>
 <body class="h-full bg-slate-950 text-slate-200 overflow-hidden">
@@ -85,11 +79,14 @@
 <div id="root" class="h-full flex flex-col"></div>
 
 <script type="text/babel">
-const { useState, useEffect, useRef } = React;
+/* global React, ReactDOM */
+const { useState, useEffect, useRef, useCallback } = React;
 
-/* ── config ─────────────────────────────────────────────── */
+/* ── config ──────────────────────────────────────────────────────────────── */
 const API_PORT   = 8000;
-const API_ORIGIN = window.location.port === String(API_PORT) ? '' : 'http://localhost:' + API_PORT;
+const API_ORIGIN = window.location.port === String(API_PORT)
+  ? ''
+  : 'http://localhost:' + API_PORT;
 
 const TABS = [
   { file:'model.py',          icon:'fa-cube',     col:'text-purple-400' },
@@ -100,36 +97,56 @@ const TABS = [
 const STEPS = ['Parsing PDF','Extracting Architecture','Verifying Tensors','Building Notebook'];
 
 const ARCH = [
-  { model:'MLP',      layers:'Linear×4 · ReLU×3 · Dropout×3', input:'(N,162)', output:'(N,9)', params:'248,841', col:'text-purple-300' },
+  { model:'MLP',      layers:'Linear×4 · ReLU×3 · Dropout×3',  input:'(N,162)', output:'(N,9)', params:'248,841', col:'text-purple-300' },
   { model:'1D-CNN',   layers:'Conv1d×2 · MaxPool×2 · Linear×2', input:'(N,162)', output:'(N,9)', params:'681,609', col:'text-cyan-300'   },
   { model:'LSTM',     layers:'LSTM(1→128) · Dropout · Linear',  input:'(N,162)', output:'(N,9)', params:'68,233',  col:'text-green-300'  },
   { model:'CNN-LSTM', layers:'Conv1d · MaxPool · LSTM · Linear', input:'(N,162)', output:'(N,9)', params:'34,121',  col:'text-yellow-300' },
 ];
 
-/* ── helpers ─────────────────────────────────────────────── */
+/* Stable shimmer widths — never computed inside render to avoid re-render loops */
+const SHIMMER_WIDTHS = [62,48,75,41,58,83,36,70,55,44,67,79,52,38,71,46,63,57,82,49];
+
+/* ── helpers ─────────────────────────────────────────────────────────────── */
 const cx = (...a) => a.filter(Boolean).join(' ');
-const uid = () => Math.random().toString(36).slice(2);
 const delay = ms => new Promise(r => setTimeout(r, ms));
+let _uidCounter = 0;
+const uid = () => 'id-' + (++_uidCounter);
 
 function mkLog(type, text) {
   const cls = { info:'text-slate-400', success:'text-emerald-400', error:'text-red-400',
                 warn:'text-amber-400', cmd:'text-blue-400', pass:'text-emerald-300' };
   const pfx = { info:'  ', success:'✓ ', error:'✗ ', warn:'⚠ ', cmd:'$ ', pass:'  ' };
-  return { id:uid(), text, cls:cls[type]||'text-slate-300', pfx:pfx[type]||'  ' };
+  return { id: uid(), text, cls: cls[type] || 'text-slate-300', pfx: pfx[type] || '  ' };
 }
 
-/* ── Terminal ─────────────────────────────────────────────── */
+/* Safe fetch wrapper — avoids AbortSignal.timeout which isn't universally supported */
+function fetchWithTimeout(url, opts, ms) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { ...opts, signal: controller.signal })
+    .finally(() => clearTimeout(timer));
+}
+
+/* ── Terminal ────────────────────────────────────────────────────────────── */
 function Terminal({ logs, onClear }) {
-  const endRef = useRef();
-  useEffect(() => endRef.current?.scrollIntoView({ behavior:'smooth' }), [logs]);
+  const endRef = useRef(null);
+  useEffect(() => {
+    if (endRef.current) {
+      endRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [logs]);
+
   return (
     <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-slate-800/80 bg-[#050d1a] overflow-hidden glass">
       <div className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-slate-900/70 border-b border-slate-800/80">
-        <span className="w-2.5 h-2.5 rounded-full bg-red-500/70 cursor-pointer"/>
-        <span className="w-2.5 h-2.5 rounded-full bg-amber-500/70 cursor-pointer"/>
-        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/70 cursor-pointer"/>
+        <span className="w-2.5 h-2.5 rounded-full bg-red-500/70"/>
+        <span className="w-2.5 h-2.5 rounded-full bg-amber-500/70"/>
+        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/70"/>
         <span className="ml-2 text-[10px] font-mono text-slate-600 tracking-wider">AGENT TERMINAL</span>
-        <button onClick={onClear} className="ml-auto text-slate-700 hover:text-slate-400 transition-colors text-[10px]" title="clear">
+        <button
+          onClick={onClear}
+          className="ml-auto text-slate-700 hover:text-slate-400 transition-colors text-[10px]"
+          title="clear">
           <i className="fa-solid fa-trash-can"/>
         </button>
       </div>
@@ -145,7 +162,7 @@ function Terminal({ logs, onClear }) {
   );
 }
 
-/* ── PipelineSteps ────────────────────────────────────────── */
+/* ── PipelineSteps ───────────────────────────────────────────────────────── */
 function PipelineSteps({ step }) {
   return (
     <div className="flex items-start gap-0 fade-up">
@@ -157,11 +174,11 @@ function PipelineSteps({ step }) {
           <React.Fragment key={i}>
             <div className={cx('flex flex-col items-center gap-1 flex-1', cls)}>
               <div className="sc w-5 h-5 rounded-full border-2 flex items-center justify-center text-[9px] font-mono transition-all duration-400">
-                {done ? <i className="fa-solid fa-check text-[8px]"/> : i+1}
+                {done ? <i className="fa-solid fa-check text-[8px]"/> : i + 1}
               </div>
               <span className="sl text-[8.5px] font-mono text-center leading-tight px-0.5">{label}</span>
             </div>
-            {i < STEPS.length-1 && (
+            {i < STEPS.length - 1 && (
               <div className={cx('flex-none h-px mt-2.5 w-3 transition-all duration-500', done ? 'conn-done' : 'conn-wait')}/>
             )}
           </React.Fragment>
@@ -171,11 +188,12 @@ function PipelineSteps({ step }) {
   );
 }
 
-/* ── ArchCard ─────────────────────────────────────────────── */
-function ArchCard({ m, delay:d }) {
+/* ── ArchCard ────────────────────────────────────────────────────────────── */
+function ArchCard({ m, delayMs }) {
   return (
-    <div className="fade-up glass rounded-lg p-2.5 border border-slate-800/60 hover:border-blue-900/60 transition-all"
-         style={{ animationDelay: d+'ms' }}>
+    <div
+      className="fade-up glass rounded-lg p-2.5 border border-slate-800/60 hover:border-blue-900/60 transition-all"
+      style={{ animationDelay: delayMs + 'ms' }}>
       <div className="flex items-center justify-between mb-1.5">
         <span className={cx('text-xs font-semibold font-mono', m.col)}>{m.model}</span>
         <span className="text-[10px] font-mono text-slate-500 bg-slate-900/80 px-1.5 py-0.5 rounded">
@@ -192,60 +210,84 @@ function ArchCard({ m, delay:d }) {
   );
 }
 
-/* ── DownloadButton ────────────────────────────────────────── */
+/* ── DownloadButton ──────────────────────────────────────────────────────── */
 function DownloadButton({ ready }) {
+  const href = ready ? (API_ORIGIN + '/api/download-notebook') : undefined;
   return (
-    <a href={ready ? API_ORIGIN + '/api/download-notebook' : undefined}
-       className={cx(
-         'flex items-center justify-center gap-2.5 w-full px-4 py-3 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300',
-         ready
-           ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 nb-glow cursor-pointer'
-           : 'bg-slate-800/60 text-slate-600 border border-slate-800 cursor-not-allowed'
-       )}>
-      <i className={cx('fa-solid', ready ? 'fa-download' : 'fa-lock', 'text-sm')}/>
+    <a
+      href={href}
+      download={ready ? 'paper2code_pipeline.ipynb' : undefined}
+      className={cx(
+        'flex items-center justify-center gap-2.5 w-full px-4 py-3 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300',
+        ready
+          ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 nb-glow cursor-pointer'
+          : 'bg-slate-800/60 text-slate-600 border border-slate-800 cursor-not-allowed pointer-events-none'
+      )}>
+      <i className={cx('fa-solid text-sm', ready ? 'fa-download' : 'fa-lock')}/>
       <span>Download Executable Notebook (.ipynb)</span>
       {ready && <i className="fa-solid fa-arrow-up-right-from-square text-xs opacity-70"/>}
     </a>
   );
 }
 
-/* ── CodeViewer ────────────────────────────────────────────── */
+/* ── CodeViewer ──────────────────────────────────────────────────────────── */
 function CodeViewer({ code, loading }) {
   const [copied, setCopied] = useState(false);
-  async function doCopy() {
+
+  const doCopy = useCallback(async () => {
     if (!code) return;
-    await navigator.clipboard.writeText(code).catch(() => {});
+    try { await navigator.clipboard.writeText(code); } catch (_) {}
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }, [code]);
+
+  if (loading) {
+    return (
+      <div className="flex-1 p-4 space-y-2.5">
+        {SHIMMER_WIDTHS.map((w, i) => (
+          <div
+            key={i}
+            className="shimmer-bg h-2.5 rounded-sm"
+            style={{ width: w + '%', opacity: Math.max(0.15, 1 - i * 0.04) }}
+          />
+        ))}
+      </div>
+    );
   }
-  const lines = code ? code.split('\n') : [];
 
-  if (loading) return (
-    <div className="flex-1 p-4 space-y-2.5">
-      {[...Array(20)].map((_,i) => (
-        <div key={i} className="shimmer-bg h-2.5 rounded-sm" style={{width:(40+Math.random()*55)+'%',opacity:Math.max(.15,1-i*.04)}}/>
-      ))}
-    </div>
-  );
+  if (!code) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center gap-4">
+        <div className="w-14 h-14 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-center">
+          <i className="fa-solid fa-robot text-3xl text-slate-700"/>
+        </div>
+        <div className="text-center space-y-1.5">
+          <p className="text-xs font-semibold font-mono text-slate-600">IBM Bob 2.0 — awaiting paper</p>
+          <p className="text-[11px] font-mono text-slate-800">Upload a research paper PDF and run the pipeline</p>
+          <p className="text-[11px] font-mono text-slate-800">IBM Bob will generate the code for this paper</p>
+        </div>
+        <div className="flex items-center gap-2 text-[10px] font-mono text-slate-800">
+          <i className="fa-solid fa-arrow-left text-slate-800"/>
+          <span>Drop PDF · Execute Pipeline · View results here</span>
+        </div>
+      </div>
+    );
+  }
 
-  if (!code) return (
-    <div className="flex-1 flex flex-col items-center justify-center text-slate-800 gap-3">
-      <i className="fa-solid fa-code text-5xl"/>
-      <p className="text-xs font-mono text-slate-700">Upload a paper to populate the code viewer</p>
-    </div>
-  );
-
+  const lines = code.split('\n');
   return (
     <div className="flex-1 overflow-auto relative fade-in">
-      {/* copy */}
-      <button onClick={doCopy}
+      <button
+        onClick={doCopy}
         className="absolute top-3 right-4 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-mono bg-slate-900/90 hover:bg-slate-800 border border-slate-700/60 text-slate-500 hover:text-white transition-all">
         <i className={cx('text-[9px]', copied ? 'fa-solid fa-check text-emerald-400' : 'fa-regular fa-copy')}/>
         {copied ? 'Copied!' : 'Copy'}
       </button>
       <div className="flex min-h-full">
-        <div className="gutter flex-shrink-0 select-none text-right text-slate-800 bg-[#070f1c] border-r border-slate-900 px-3 py-4" style={{minWidth:'3rem'}}>
-          {lines.map((_,i) => <div key={i}>{i+1}</div>)}
+        <div
+          className="gutter flex-shrink-0 select-none text-right text-slate-800 bg-[#070f1c] border-r border-slate-900 px-3 py-4"
+          style={{ minWidth: '3rem' }}>
+          {lines.map((_, i) => <div key={i}>{i + 1}</div>)}
         </div>
         <pre className="code-pre flex-1 p-4 m-0 bg-transparent text-slate-400">{code}</pre>
       </div>
@@ -253,7 +295,7 @@ function CodeViewer({ code, loading }) {
   );
 }
 
-/* ── App ───────────────────────────────────────────────────── */
+/* ── App ─────────────────────────────────────────────────────────────────── */
 function App() {
   const [serverOk,      setServerOk]      = useState(null);
   const [notebookReady, setNotebookReady] = useState(false);
@@ -261,110 +303,177 @@ function App() {
   const [drag,          setDrag]          = useState(false);
   const [busy,          setBusy]          = useState(false);
   const [pipeStep,      setPipeStep]      = useState(-1);
-  const [logs,          setLogs]          = useState([
-    mkLog('info','── Paper2Code  ·  IBM Bob 2.0  ──────────'),
-    mkLog('info','── Agentic Verification Sandbox ──────────'),
-    mkLog('cmd', 'awaiting input…'),
+  const [logs,          setLogs]          = useState(() => [
+    mkLog('info', '── Paper2Code  ·  IBM Bob 2.0  ──────────'),
+    mkLog('info', '── Agentic Verification Sandbox ──────────'),
+    mkLog('cmd',  'awaiting input…'),
   ]);
   const [archVisible,  setArchVisible]   = useState(false);
   const [activeTab,    setActiveTab]     = useState('model.py');
-  const [code,         setCode]          = useState('');
+  // codeMap: { 'model.py': '...', 'dataset.py': '...', 'verify_tensors.py': '...' }
+  // Populated only after a successful pipeline run — empty on page load.
+  const [codeMap,      setCodeMap]       = useState({});
   const [codeLoading,  setCodeLoading]   = useState(false);
-  const fileInputRef = useRef();
+  // pipelineRan: true once a paper has been processed successfully
+  const [pipelineRan,  setPipelineRan]   = useState(false);
+  const fileInputRef = useRef(null);
 
-  /* health */
+  /* ── health check only — no code pre-loading on mount ────────────────── */
   useEffect(() => {
-    fetch(API_ORIGIN+'/api/health', {signal:AbortSignal.timeout(5000)})
+    fetchWithTimeout(API_ORIGIN + '/api/health', {}, 5000)
       .then(r => r.json())
       .then(d => { setServerOk(true); if (d.notebook_ready) setNotebookReady(true); })
       .catch(() => setServerOk(false));
   }, []);
 
-  /* load code on tab change */
-  useEffect(() => { loadCode(activeTab); }, [activeTab]);
+  // The code viewer shows whatever is in codeMap for the active tab.
+  // It is NEVER auto-fetched on mount — only populated after run() succeeds.
+  const code = codeMap[activeTab] || '';
 
-  function addLog(...ls) { setLogs(prev => [...prev, ...ls]); }
-  function clearLogs()   { setLogs([mkLog('info','── terminal cleared ─────────────────────')]); }
-
-  async function loadCode(fname) {
-    setCodeLoading(true); setCode('');
-    try {
-      const r = await fetch(API_ORIGIN+'/api/get-code/'+fname);
-      const d = await r.json();
-      setCode(r.ok ? (d.code ?? d.content ?? '') : '# Error: '+(d.detail||fname));
-    } catch(e) { setCode('# Network error: '+e.message); }
-    finally { setCodeLoading(false); }
+  function addLog(...ls) {
+    setLogs(prev => [...prev, ...ls]);
   }
 
-  /* drag handlers */
-  const onDragOver  = e => { e.preventDefault(); setDrag(true); };
-  const onDragLeave = ()  => setDrag(false);
-  const onDrop      = e  => {
-    e.preventDefault(); setDrag(false);
-    const f = e.dataTransfer.files[0];
-    if (f?.name.toLowerCase().endsWith('.pdf')) setFile(f);
-    else addLog(mkLog('error','Only .pdf files accepted.'));
-  };
-  const onFileChange = e => { if (e.target.files[0]) setFile(e.target.files[0]); };
+  function clearLogs() {
+    setLogs([mkLog('info', '── terminal cleared ─────────────────────')]);
+  }
 
-  /* execute */
+  /* Fetch all three generated files and store in codeMap */
+  async function loadAllGeneratedCode() {
+    setCodeLoading(true);
+    const files = ['model.py', 'dataset.py', 'verify_tensors.py'];
+    const entries = {};
+    await Promise.all(files.map(async fname => {
+      try {
+        const r = await fetchWithTimeout(API_ORIGIN + '/api/get-code/' + fname, {}, 10000);
+        const d = await r.json();
+        entries[fname] = r.ok ? (d.code || d.content || '') : '# Error fetching ' + fname;
+      } catch (e) {
+        entries[fname] = '# Network error: ' + e.message;
+      }
+    }));
+    setCodeMap(entries);
+    setCodeLoading(false);
+  }
+
+  /* ── drag handlers ────────────────────────────────────────────────────── */
+  const onDragOver  = e => { e.preventDefault(); setDrag(true); };
+  const onDragLeave = () => setDrag(false);
+  const onDrop      = e => {
+    e.preventDefault();
+    setDrag(false);
+    const f = e.dataTransfer.files[0];
+    if (f && f.name.toLowerCase().endsWith('.pdf')) {
+      setFile(f);
+    } else {
+      addLog(mkLog('error', 'Only .pdf files accepted.'));
+    }
+  };
+  const onFileChange = e => {
+    if (e.target.files && e.target.files[0]) setFile(e.target.files[0]);
+  };
+
+  /* ── execute pipeline ─────────────────────────────────────────────────── */
   async function run() {
     if (!file || busy) return;
-    setBusy(true); setArchVisible(false); setNotebookReady(false); setPipeStep(0);
+    setBusy(true);
+    setArchVisible(false);
+    setNotebookReady(false);
+    setPipelineRan(false);
+    setCodeMap({});          // clear any previous results
+    setPipeStep(0);
 
-    addLog(mkLog('cmd',  `paper2code --exec "${file.name}"`),
-           mkLog('info', 'Step 1 ─ Parsing PDF structure…'));
+    addLog(
+      mkLog('cmd',  'paper2code --exec "' + file.name + '"'),
+      mkLog('info', 'Step 1 ─ Parsing PDF · sending to IBM Bob 2.0…')
+    );
 
-    await delay(550); setPipeStep(1);
-    addLog(mkLog('info','Step 2 ─ Extracting model architecture metadata…'));
+    await delay(550);
+    setPipeStep(1);
+    addLog(mkLog('info', 'Step 2 ─ IBM Bob extracting architecture metadata…'));
 
-    await delay(450); setPipeStep(2);
-    addLog(mkLog('info','Step 3 ─ Uploading to /api/upload-paper…'));
+    await delay(450);
+    setPipeStep(2);
+    addLog(mkLog('info', 'Step 3 ─ Uploading paper to /api/upload-paper…'));
 
-    const fd = new FormData(); fd.append('file', file);
+    const fd = new FormData();
+    fd.append('file', file);
+
     try {
-      const r = await fetch(API_ORIGIN+'/api/upload-paper', { method:'POST', body:fd });
+      const r = await fetchWithTimeout(
+        API_ORIGIN + '/api/upload-paper',
+        { method: 'POST', body: fd },
+        120000
+      );
       const d = await r.json();
-      if (!r.ok) { addLog(mkLog('error', d.detail||`HTTP ${r.status}`)); setPipeStep(-1); return; }
 
-      (d.verification.stdout||'').trim().split('\n').filter(Boolean).forEach(line => {
-        addLog(mkLog(line.includes('[PASS]') ? 'pass' : line.includes('[FAIL]') ? 'error' : 'info', line));
-      });
-
-      if (d.verification.stderr?.trim()) {
-        d.verification.stderr.trim().split('\n').filter(Boolean).forEach(l => addLog(mkLog('warn', l)));
+      if (!r.ok) {
+        addLog(mkLog('error', d.detail || ('HTTP ' + r.status)));
+        setPipeStep(-1);
+        setBusy(false);
+        return;
       }
 
-      addLog(mkLog('info','──────────────────────────────────────────'));
+      // Stream verification stdout lines into the terminal
+      const stdout = (d.verification && d.verification.stdout) || '';
+      stdout.trim().split('\n').filter(Boolean).forEach(line => {
+        const type = line.includes('[PASS]') ? 'pass'
+                   : line.includes('[FAIL]') ? 'error'
+                   : 'info';
+        addLog(mkLog(type, line));
+      });
+
+      const stderr = (d.verification && d.verification.stderr) || '';
+      if (stderr.trim()) {
+        stderr.trim().split('\n').filter(Boolean).forEach(l => addLog(mkLog('warn', l)));
+      }
+
+      addLog(mkLog('info', '──────────────────────────────────────────'));
 
       if (d.status === 'ok') {
-        await delay(400); setPipeStep(3);
-        await delay(350); setPipeStep(4);
-        addLog(mkLog('success', d.message),
-               mkLog('success', 'Notebook generated ─ ready for Colab / Jupyter.'),
-               mkLog('cmd',     `cat src/${activeTab} → code viewer`));
+        await delay(400);
+        setPipeStep(3);
+        addLog(mkLog('info', 'Step 4 ─ IBM Bob generating notebook & source files…'));
+        await delay(350);
+        setPipeStep(4);
+        addLog(
+          mkLog('success', d.message),
+          mkLog('success', 'Notebook generated ─ ready for Colab / Jupyter.'),
+          mkLog('info',    'Fetching IBM Bob–generated source files…')
+        );
         setArchVisible(true);
         setNotebookReady(d.notebook_ready === true);
-        loadCode(activeTab);
+        // Only now fetch generated code — never on page load
+        await loadAllGeneratedCode();
+        setPipelineRan(true);
+        addLog(mkLog('cmd', 'code explorer populated ✓'));
       } else {
         addLog(mkLog('error', d.message));
         setPipeStep(-1);
       }
-    } catch(e) {
-      addLog(mkLog('error','Network error: '+e.message));
+    } catch (e) {
+      addLog(mkLog('error', 'Network error: ' + e.message));
       setPipeStep(-1);
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   }
 
-  const stageTxt = pipeStep < 0 ? 'Idle' : pipeStep < 2 ? 'Upload' : pipeStep < 4 ? 'Verify' : 'Complete';
-  const stageCls = pipeStep === 4 ? 'text-emerald-400 border-emerald-700/40 bg-emerald-950/30'
-    : pipeStep >= 0 ? 'text-blue-400 border-blue-700/40 bg-blue-950/30'
+  const stageTxt = pipeStep < 0 ? 'Idle'
+    : pipeStep < 2  ? 'Upload'
+    : pipeStep < 4  ? 'Verify'
+    : 'Complete';
+
+  const stageCls = pipeStep === 4
+    ? 'text-emerald-400 border-emerald-700/40 bg-emerald-950/30'
+    : pipeStep >= 0
+    ? 'text-blue-400 border-blue-700/40 bg-blue-950/30'
     : 'text-slate-600 border-slate-800 bg-slate-900/30';
 
   return (
     <div className="h-full flex flex-col">
 
-      {/* ── NAVBAR ── */}
+      {/* ── NAVBAR ─────────────────────────────────────────────────────────── */}
       <header className="flex-shrink-0 flex items-center justify-between px-5 py-2.5 bg-[#050d1a] border-b border-slate-900">
         <div className="flex items-center gap-3">
           <div className="w-7 h-7 rounded-lg bg-blue-600/20 border border-blue-600/30 flex items-center justify-center">
@@ -378,15 +487,23 @@ function App() {
 
         <span className={cx('text-[10px] font-mono border px-2.5 py-0.5 rounded-full transition-all duration-500', stageCls)}>
           {busy && <i className="fa-solid fa-circle-notch fa-spin mr-1 text-[8px]"/>}
-          {pipeStep===4 && <i className="fa-solid fa-check mr-1 text-[8px]"/>}
+          {pipeStep === 4 && !busy && <i className="fa-solid fa-check mr-1 text-[8px]"/>}
           {stageTxt}
         </span>
 
         <div className="flex items-center gap-2 text-[10px] font-mono">
-          <span className={cx('w-2 h-2 rounded-full inline-block transition-all',
-            serverOk===null?'bg-amber-500':serverOk?'bg-emerald-500 pulse-green-dot':'bg-red-500')}/>
-          <span className={serverOk===null?'text-amber-400':serverOk?'text-emerald-400':'text-red-400'}>
-            {serverOk===null?'connecting…':serverOk?'localhost:8000':'unreachable'}
+          <span className={cx(
+            'w-2 h-2 rounded-full inline-block transition-all',
+            serverOk === null ? 'bg-amber-500'
+            : serverOk        ? 'bg-emerald-500 pulse-green-dot'
+            :                   'bg-red-500'
+          )}/>
+          <span className={
+            serverOk === null ? 'text-amber-400'
+            : serverOk        ? 'text-emerald-400'
+            :                   'text-red-400'
+          }>
+            {serverOk === null ? 'connecting…' : serverOk ? 'localhost:8000' : 'unreachable'}
           </span>
         </div>
       </header>
@@ -400,8 +517,8 @@ function App() {
         </div>
       )}
 
-      {/* ── WORKSPACE ── */}
-      <main className="flex flex-1 overflow-hidden gap-0">
+      {/* ── WORKSPACE ──────────────────────────────────────────────────────── */}
+      <main className="flex flex-1 overflow-hidden">
 
         {/* ════ LEFT PANEL ════ */}
         <aside className="w-[320px] flex-shrink-0 flex flex-col border-r border-slate-900 bg-[#07101d] overflow-y-auto">
@@ -420,19 +537,25 @@ function App() {
                 'hover:border-blue-800/60 hover:bg-blue-950/10',
                 drag && 'drag-active'
               )}
-              onClick={() => fileInputRef.current.click()}
-              onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}
-            >
+              onClick={() => fileInputRef.current && fileInputRef.current.click()}
+              onDragOver={onDragOver}
+              onDragLeave={onDragLeave}
+              onDrop={onDrop}>
               <div className={cx(
                 'w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200',
-                file ? 'bg-emerald-950/50 border border-emerald-800/50' : 'bg-blue-950/40 border border-blue-900/40'
+                file
+                  ? 'bg-emerald-950/50 border border-emerald-800/50'
+                  : 'bg-blue-950/40 border border-blue-900/40'
               )}>
-                <i className={cx('text-xl', file ? 'fa-solid fa-file-check text-emerald-400' : 'fa-solid fa-file-pdf text-blue-500')}/>
+                <i className={cx(
+                  'text-xl',
+                  file ? 'fa-solid fa-file-check text-emerald-400' : 'fa-solid fa-file-pdf text-blue-500'
+                )}/>
               </div>
               {file ? (
                 <div className="flex flex-col items-center gap-1">
-                  <span className="text-[11px] font-mono text-emerald-400 font-medium">{file.name}</span>
-                  <span className="text-[9.5px] text-slate-600">{(file.size/1024).toFixed(1)} KB</span>
+                  <span className="text-[11px] font-mono text-emerald-400 font-medium max-w-[220px] truncate text-center">{file.name}</span>
+                  <span className="text-[9.5px] text-slate-600">{(file.size / 1024).toFixed(1)} KB</span>
                 </div>
               ) : (
                 <div className="text-center">
@@ -454,7 +577,7 @@ function App() {
               disabled={!file || busy}
               className={cx(
                 'w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold tracking-wide transition-all duration-200',
-                (!file||busy)
+                (!file || busy)
                   ? 'bg-slate-800/60 text-slate-600 border border-slate-800 cursor-not-allowed'
                   : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white pulse-blue'
               )}>
@@ -473,7 +596,7 @@ function App() {
             <div className="flex-1 h-px bg-slate-900"/>
           </div>
 
-          {/* terminal — fills rest of left panel */}
+          {/* terminal */}
           <div className="flex flex-col flex-1 min-h-0 px-4 pb-4">
             <Terminal logs={logs} onClear={clearLogs}/>
           </div>
@@ -495,11 +618,11 @@ function App() {
               </div>
               {archVisible ? (
                 <div className="grid grid-cols-2 gap-2">
-                  {ARCH.map((m,i) => <ArchCard key={m.model} m={m} delay={i*60}/>)}
+                  {ARCH.map((m, i) => <ArchCard key={m.model} m={m} delayMs={i * 60}/>)}
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2">
-                  {[...Array(4)].map((_,i) => (
+                  {[0, 1, 2, 3].map(i => (
                     <div key={i} className="h-16 rounded-lg shimmer-bg opacity-30"/>
                   ))}
                 </div>
@@ -525,12 +648,14 @@ function App() {
               <div className="flex-shrink-0 flex items-center border-b border-slate-800/80 bg-slate-900/30 px-3">
                 <span className="text-[9px] font-mono text-slate-700 uppercase tracking-widest mr-3">Explorer</span>
                 {TABS.map(t => (
-                  <button key={t.file} onClick={() => setActiveTab(t.file)}
+                  <button
+                    key={t.file}
+                    onClick={() => setActiveTab(t.file)}
                     className={cx(
                       'flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-mono border-b-2 border-transparent transition-all duration-150 hover:text-slate-300',
-                      activeTab===t.file ? 'tab-on' : 'text-slate-600'
+                      activeTab === t.file ? 'tab-on' : 'text-slate-600'
                     )}>
-                    <i className={cx('fa-solid text-[9px]', t.icon, activeTab===t.file ? t.col : 'text-slate-700')}/>
+                    <i className={cx('fa-solid text-[9px]', t.icon, activeTab === t.file ? t.col : 'text-slate-700')}/>
                     {t.file}
                   </button>
                 ))}
